@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程進度管理系統 v3</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;
+  --blu:#2563eb;--tel:#0f766e;--pur:#7e22ce;--amb:#b45309;
+  --txt:#e2e8f0;--mut:#94a3b8;--dim:#64748b;
+  --yel:#eab308;--red:#ef4444;--grn:#15803d;
+}
+body{background:var(--bg);color:var(--txt);
+  font-family:'Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif;min-height:100vh;}
+.page{display:none;}
+.page.active{display:block;}
+#page-renov.active,#page-struct.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px;}
+
+.btn{border:none;cursor:pointer;border-radius:6px;font-family:inherit;
+  transition:filter .15s;font-size:13px;}
+.btn:hover{filter:brightness(1.18);}
+.bp{background:var(--blu);color:#fff;padding:8px 16px;font-weight:600;}
+.bs{background:var(--bg3);color:var(--txt);padding:8px 16px;}
+.bt{background:var(--tel);color:#fff;padding:8px 16px;}
+.bsm{padding:5px 11px;font-size:11px;}
+.bback{background:none;border:1px solid var(--bg3);color:var(--mut);
+  padding:6px 14px;font-size:13px;border-radius:6px;cursor:pointer;}
+.bback:hover{border-color:var(--mut);color:var(--txt);}
+
+.inp{background:var(--bg2);border:1px solid var(--bg3);border-radius:6px;
+  padding:8px 12px;color:var(--txt);font-size:13px;outline:none;font-family:inherit;}
+.inp:focus{border-color:var(--blu);}
+.lbl{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mut);}
+
+.phdr{padding:10px 16px;display:flex;align-items:center;gap:10px;
+  background:var(--bg2);border-bottom:1px solid var(--bg3);
+  flex-shrink:0;flex-wrap:wrap;}
+.phdr h1{margin:0;font-size:20px;font-weight:700;color:#fff;}
+
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.82);
+  display:none;align-items:center;justify-content:center;z-index:300;padding:16px;}
+#ov.open{display:flex;}
+#mb{background:var(--bg2);border-radius:18px;padding:24px;width:100%;
+  max-width:490px;max-height:92vh;overflow-y:auto;
+  box-shadow:0 30px 60px rgba(0,0,0,.7);}
+#mb.wide{max-width:min(94vw,1080px);}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:8px;}
+.mh h2{margin:0;font-size:17px;color:#fff;font-weight:700;flex:1;}
+.mcl{background:none;border:none;color:var(--dim);font-size:30px;
+  cursor:pointer;line-height:1;padding:0;}
+.mcl:hover{color:#fff;}
+
+/* ── Popover Menu ── */
+.dotbtn{background:var(--bg3);color:#93c5fd;border:none;border-radius:4px;
+  padding:2px 6px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1;}
+.dotbtn:hover{background:#475569;color:#fff;}
+.pop{position:fixed;background:var(--bg2);border:1px solid var(--bg3);
+  border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.6);padding:4px;
+  display:none;z-index:350;min-width:130px;}
+.pop.open{display:block;}
+.pop button{display:block;width:100%;background:none;border:none;color:var(--txt);
+  font-size:13px;padding:8px 12px;text-align:left;cursor:pointer;border-radius:4px;
+  font-family:inherit;transition:background .12s;}
+.pop button:hover{background:var(--bg3);}
+.pop button.dgr{color:#fca5a5;}
+.pop button.dgr:hover{background:#7f1d1d;color:#fff;}
+.pop hr{border:none;border-top:1px solid var(--bg3);margin:4px 0;}
+
+/* ── Drag feedback ── */
+.dragging{opacity:.4;}
+.dropzone{outline:2px dashed #60a5fa !important;outline-offset:-2px;}
+
+/* ── Home ── */
+.hw{padding:24px 20px;max-width:1450px;margin:0 auto;}
+.dh{text-align:center;margin-bottom:36px;padding-top:20px;}
+.dlb{font-size:10px;color:var(--dim);letter-spacing:6px;margin-bottom:10px;
+  text-transform:uppercase;font-weight:700;}
+.dtx{font-size:26px;font-weight:700;color:#60a5fa;letter-spacing:1px;}
+
+.tsec{background:var(--bg2);border-radius:14px;padding:16px;
+  margin-bottom:20px;border:1px solid var(--bg3);}
+.tleg{display:flex;gap:14px;margin-bottom:12px;font-size:11px;
+  color:var(--dim);flex-wrap:wrap;align-items:center;}
+.twp{overflow-x:auto;}
+.ttb{border-collapse:collapse;width:100%;min-width:920px;}
+.ttb th{padding:8px 6px;text-align:center;font-size:11px;font-weight:700;
+  border:1px solid var(--bg3);background:var(--bg2);color:var(--dim);min-width:150px;}
+.ttb th.tc{background:#1e3a8a;color:#93c5fd;}
+.ttb td{border:1px solid var(--bg3);vertical-align:top;
+  background:var(--bg);padding:6px;min-height:96px;}
+.ttb td.tc{background:#172554;}
+
+.ti{display:flex;align-items:flex-start;gap:5px;margin-bottom:6px;
+  font-size:11px;line-height:1.55;}
+.ti .ck{flex-shrink:0;margin-top:3px;accent-color:#3b82f6;cursor:pointer;}
+.ti .tx{flex:1;min-width:0;word-break:break-all;padding-top:1px;}
+.ti .asg{display:inline-block;font-size:9px;color:#a78bfa;background:#2e1065;
+  padding:1px 5px;border-radius:3px;margin-left:3px;white-space:nowrap;}
+.ti .acg{display:flex;gap:1px;flex-shrink:0;align-items:flex-start;padding-top:1px;}
+.ti .ac{background:none;border:none;color:var(--dim);cursor:pointer;
+  font-size:13px;padding:0 3px;line-height:1.4;}
+.ti .ac:hover{color:#fff;}
+
+.tadd{display:flex;gap:8px;margin-bottom:46px;flex-wrap:wrap;align-items:center;}
+.nbts{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;}
+.nbtn{border:none;cursor:pointer;border-radius:16px;padding:18px 42px;
+  font-size:19px;font-weight:700;color:#fff;letter-spacing:2px;
+  font-family:inherit;transition:transform .2s,box-shadow .2s;
+  box-shadow:0 4px 24px rgba(0,0,0,.5);}
+.nbtn:hover{transform:translateY(-3px);box-shadow:0 10px 36px rgba(0,0,0,.6);}
+
+/* ── Renovation ── */
+.rbdy{padding:16px;overflow:auto;flex:1;}
+.rleg{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;
+  font-size:11px;color:var(--dim);}
+.rleg span{display:flex;align-items:center;gap:4px;}
+.rtb{border-collapse:collapse;font-size:13px;}
+.rtb th{background:var(--bg2);border:1px solid var(--bg3);
+  padding:8px 10px;color:var(--mut);font-size:12px;font-weight:600;
+  min-width:100px;text-align:center;}
+.rtb th[draggable="true"]{cursor:grab;position:relative;}
+.rtb th[draggable="true"]:active{cursor:grabbing;}
+.rtb th.tlf{text-align:left;min-width:130px;}
+.rtb td{border:1px solid var(--bg3);}
+.rtb td.tnm{background:var(--bg2);padding:10px 12px;
+  color:var(--txt);font-weight:600;position:relative;}
+.rtb td.tnm[draggable="true"]{cursor:grab;}
+.rtb td.tnm[draggable="true"]:active{cursor:grabbing;}
+.hdrow{display:flex;align-items:center;justify-content:center;gap:6px;}
+.hdrow.lf{justify-content:flex-start;}
+.pc{text-align:center;cursor:pointer;transition:filter .18s;}
+.pc:hover{filter:brightness(1.45);}
+.pc .pcv{padding:14px 4px;color:#fff;font-weight:700;font-size:14px;}
+
+/* ── Structure ── */
+.sbdy{overflow:auto;flex:1;position:relative;}
+.gtb{border-collapse:collapse;font-size:11px;}
+.gtb th{border:1px solid var(--bg3);padding:6px 8px;font-size:11px;
+  color:var(--txt);text-align:center;vertical-align:top;position:sticky;top:0;z-index:20;}
+.gtb th.gcn{position:sticky;top:0;left:0;z-index:30;background:var(--bg2);min-width:94px;}
+.gtb th.gih{background:#1e3a8a;min-width:96px;}
+.gtb th.gfh{background:#0c4a6e;min-width:96px;}
+.gtb td{border:1px solid #1e293b;height:22px;}
+.gtb td.gdc{position:sticky;left:0;z-index:10;background:var(--bg);
+  border:1px solid var(--bg3);padding:1px 7px;font-size:10px;color:var(--dim);
+  white-space:nowrap;min-width:94px;}
+.gtb tr.tdr td{background:#1e3a6e !important;}
+.gtb tr.tdr td.gdc{background:#1e3a6e !important;color:#60a5fa;}
+.gtb tr.wkr{background:#0d1525;}
+.gtb tr.wkr td.gdc{background:#0d1525;color:#374151;}
+.mrow td{background:#1e293b;border-bottom:1px solid var(--bg3);
+  padding:4px 10px;font-size:11px;font-weight:700;color:#60a5fa;letter-spacing:3px;}
+.bd{background:#7f1d1d;color:#fff;padding:2px 6px;font-size:9px;border-radius:3px;
+  border:none;cursor:pointer;font-family:inherit;}
+.bd:hover{filter:brightness(1.2);}
+
+/* ── Cell matrix ── */
+.ctb{border-collapse:collapse;font-size:12px;width:100%;}
+.ctb th{background:var(--bg);border:1px solid var(--bg3);
+  padding:6px 6px;color:var(--mut);text-align:center;font-size:12px;min-width:118px;}
+.ctb th[draggable="true"]{cursor:grab;}
+.ctb th[draggable="true"]:active{cursor:grabbing;}
+.ctb th.clf{text-align:left;min-width:140px;}
+.ctb td{border:1px solid var(--bg3);padding:3px;text-align:center;}
+.ctb td.cnm{background:var(--bg);color:var(--txt);font-weight:600;
+  text-align:left;padding:8px 10px;position:relative;}
+.ctb td.cnm[draggable="true"]{cursor:grab;}
+.ctb tr.avgr td{background:var(--bg);}
+.pi{width:58px;background:var(--bg);border:1px solid var(--bg3);
+  border-radius:4px;padding:3px;color:#fff;text-align:center;font-size:12px;font-family:inherit;}
+.pi:focus{outline:none;border-color:var(--blu);}
+.cwrap{display:flex;gap:4px;align-items:center;justify-content:center;}
+.nbtc{background:var(--bg3);color:#fbbf24;border:none;border-radius:4px;
+  padding:3px 6px;font-size:10px;cursor:pointer;font-family:inherit;}
+.nbtc:hover{background:#475569;}
+.nbtc.has{background:#78350f;color:#fde047;font-weight:700;}
+
+.note{background:var(--bg);border:1px solid var(--bg3);border-radius:8px;
+  padding:10px 12px;margin-bottom:8px;}
+.note .nmt{display:flex;justify-content:space-between;align-items:center;
+  font-size:10px;color:var(--dim);margin-bottom:4px;}
+.note .ntx{color:var(--txt);font-size:13px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;}
+
+.f{display:flex;}.fc{flex-direction:column;}.fw{flex-wrap:wrap;}
+.ai{align-items:center;}.mla{margin-left:auto;}
+.g2{gap:8px;}.g3{gap:12px;}.g4{gap:16px;}
+.mt2{margin-top:8px;}.mt3{margin-top:12px;}.mt4{margin-top:16px;}
+
+/* ── Print headers (hidden by default) ── */
+.prthdr{display:none;}
+.prtnotes{display:none;}
+
+/* ══════════════ PRINT STYLES ══════════════ */
+@media print{
+  @page{margin:10mm;}
+  body{background:white !important;color:#111 !important;}
+  *{-webkit-print-color-adjust:exact !important;
+    color-adjust:exact !important;print-color-adjust:exact !important;}
+
+  /* Hide everything first */
+  body>*{display:none !important;}
+
+  /* PRINT RENOVATION */
+  body.print-renov #page-renov{display:flex !important;height:auto !important;overflow:visible !important;}
+  body.print-renov .phdr{display:none !important;}
+  body.print-renov .rbdy{overflow:visible !important;padding:0 !important;}
+  body.print-renov .rtb th,body.print-renov .rtb td.tnm{
+    background:#f3f4f6 !important;color:#111 !important;border-color:#9ca3af !important;}
+  body.print-renov .rtb td{border-color:#9ca3af !important;}
+  body.print-renov .rtb th.tlf{background:#e5e7eb !important;}
+  body.print-renov .dotbtn,body.print-renov .bd,body.print-renov .btn{display:none !important;}
+  body.print-renov .prthdr{display:block !important;padding:0 0 14px;margin-bottom:14px;
+    border-bottom:2px solid #111;}
+  body.print-renov .prthdr h2{font-size:20px;color:#111;margin:0;}
+  body.print-renov .prthdr div{font-size:12px;color:#555;margin-top:4px;}
+
+  /* PRINT CELL */
+  body.print-cell #ov{display:flex !important;position:static !important;
+    background:white !important;padding:0 !important;}
+  body.print-cell #mb{background:white !important;color:#111 !important;
+    box-shadow:none !important;max-width:none !important;max-height:none !important;
+    padding:10px !important;border-radius:0 !important;overflow:visible !important;}
+  body.print-cell .mh h2{color:#111 !important;}
+  body.print-cell .mcl,body.print-cell .btn,body.print-cell .dotbtn,body.print-cell .bd{display:none !important;}
+  body.print-cell .ctb th,body.print-cell .ctb td.cnm{
+    background:#f3f4f6 !important;color:#111 !important;border-color:#9ca3af !important;}
+  body.print-cell .ctb td{border-color:#9ca3af !important;}
+  body.print-cell .ctb tr.avgr td{background:#f3f4f6 !important;}
+  body.print-cell .pi{background:white !important;color:#111 !important;border-color:#9ca3af !important;}
+  body.print-cell .nbtc{display:none !important;}
+  body.print-cell .prtnotes{display:block !important;margin-top:16px;padding-top:12px;
+    border-top:2px solid #111;}
+  body.print-cell .prtnotes h3{font-size:14px;color:#111;margin-bottom:8px;}
+  body.print-cell .prtnotes .pnote{background:#f9fafb !important;border:1px solid #d1d5db !important;
+    border-radius:6px;padding:6px 8px;margin-bottom:6px;color:#111 !important;font-size:12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═════════ HOME ═════════ -->
+<div id="page-home" class="page active">
+<div class="hw">
+  <div class="dh">
+    <div class="dlb">── 工程進度管理系統 ──</div>
+    <div id="ddisp" class="dtx"></div>
+  </div>
+
+  <div class="tsec">
+    <div class="tleg">
+      <b style="color:#94a3b8;font-size:12px;">📋 本週待辦事項</b>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px;margin-right:3px;"></span>延期1天</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:3px;"></span>延期2天+</span>
+      <span>☑ 已完成</span>
+      <span><span style="background:#2e1065;color:#a78bfa;font-size:9px;padding:1px 5px;border-radius:3px;">@處理人</span></span>
+      <span class="mla" style="color:#475569;font-size:10px;">資料存於本裝置</span>
+      <button class="btn bs bsm" onclick="exportData()">📤 匯出</button>
+      <button class="btn bs bsm" onclick="importData()">📥 匯入</button>
+    </div>
+    <div class="twp">
+      <table id="ttb" class="ttb">
+        <thead><tr id="thr"></tr></thead>
+        <tbody><tr id="tbr"></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tadd">
+    <input type="date" id="tdt" class="inp">
+    <input type="text" id="ttx" class="inp" style="flex:1;min-width:200px;" placeholder="事項內容">
+    <input type="text" id="tasg" class="inp" style="width:130px;" placeholder="處理人員">
+    <button class="btn bp" style="padding:9px 24px;font-size:14px;" onclick="addTodo()">＋ 新增</button>
+  </div>
+
+  <div class="nbts">
+    <button class="nbtn" style="background:linear-gradient(135deg,#1d4ed8,#1e40af);"
+      onclick="go('struct')">🏗️&nbsp; 主結構</button>
+    <button class="nbtn" style="background:linear-gradient(135deg,#0f766e,#0d9488);"
+      onclick="go('renov','indoor')">🔨&nbsp; 室內裝修</button>
+    <button class="nbtn" style="background:linear-gradient(135deg,#b45309,#d97706);"
+      onclick="go('renov','outdoor')">🌳&nbsp; 室外裝修</button>
+  </div>
+</div>
+</div>
+
+<!-- ═════════ RENOVATION ═════════ -->
+<div id="page-renov" class="page">
+  <div class="phdr">
+    <button class="bback" onclick="go('home')">← 返回</button>
+    <h1 id="rhd"></h1>
+    <span style="color:var(--dim);font-size:12px;">拖曳表頭 / 點 ⋮ 可調整順序</span>
+    <div class="mla f g2">
+      <button class="btn bs bsm" onclick="printRenov()">📄 匯出 PDF</button>
+      <button class="btn bsm" style="background:#7e22ce;color:#fff;" onclick="openBatchFloorSettings()">📋 批次設定戶別</button>
+      <button class="btn bp bsm" onclick="openAddTrade()">＋ 工種</button>
+      <button class="btn bt bsm" onclick="openAddFloor()">＋ 樓層</button>
+    </div>
+  </div>
+  <div class="rbdy">
+    <div class="prthdr"><h2 id="prtRH"></h2><div id="prtRD"></div></div>
+    <div id="rleg" class="rleg"></div>
+    <div style="overflow-x:auto;">
+      <table id="rtb" class="rtb"></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ STRUCTURE ═════════ -->
+<div id="page-struct" class="page">
+  <div class="phdr">
+    <button class="bback" onclick="go('home')">← 返回</button>
+    <h1>主結構進度表</h1>
+    <span id="sinf" style="color:var(--dim);font-size:12px;"></span>
+    <div class="mla f g2">
+      <button class="btn bsm" style="background:#1e3a8a;color:#93c5fd;border:none;border-radius:6px;cursor:pointer;font-family:inherit;"
+        onclick="scrollToToday()">📍 今天</button>
+      <button class="btn bp bsm" onclick="openAddItem()">＋ 新增項目</button>
+    </div>
+  </div>
+  <div class="sbdy" id="sbdy">
+    <table id="stb" class="gtb"></table>
+  </div>
+</div>
+
+<!-- ═════════ MODAL ═════════ -->
+<div id="ov" onclick="closeModal(event)">
+  <div id="mb">
+    <div class="mh">
+      <h2 id="mtl"></h2>
+      <div id="mhbtns"></div>
+      <button class="mcl" onclick="fclose()">×</button>
+    </div>
+    <div id="mbd"></div>
+  </div>
+</div>
+
+<!-- ═════════ POPOVER ═════════ -->
+<div id="pop" class="pop"></div>
+
+<script>
+// ══════════ UTILITIES ══════════
+const DOW=['日','一','二','三','四','五','六'];
+const uid=()=>Math.random().toString(36).slice(2,9);
+const toS=d=>{
+  if(!(d instanceof Date))return d;
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+};
+const toDt=s=>new Date(s+'T00:00:00');
+const today=()=>toS(new Date());
+const addD=(s,n)=>{const d=toDt(s);d.setDate(d.getDate()+n);return toS(d);};
+const diffD=(a,b)=>Math.round((toDt(b)-toDt(a))/86400000);
+const fmtS=s=>{const d=toDt(s);return `${d.getMonth()+1}/${d.getDate()}`;};
+const fmtW=s=>{const d=toDt(s);return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`;};
+const fmtL=s=>{const d=toDt(s);return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 星期${DOW[d.getDay()]}`;};
+const fmtDT=s=>{const d=new Date(s);return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+function moveArr(arr,from,to){
+  if(from===to||from<0||to<0||from>=arr.length||to>=arr.length)return false;
+  const[it]=arr.splice(from,1);arr.splice(to,0,it);return true;
+}
+
+// ══════════ ROLLING WEEK ══════════
+// Mon on left. Past days this week roll to next week.
+function rollWeekDays(){
+  const td=today();
+  const dow=toDt(td).getDay(); // 0=Sun..6=Sat
+  const daysSinceMon=dow===0?6:dow-1;
+  const thisMon=addD(td,-daysSinceMon);
+  return Array.from({length:7},(_,i)=>{
+    let d=addD(thisMon,i);
+    if(d<td)d=addD(d,7);
+    return d;
+  });
+}
+
+// ══════════ STATE ══════════
+const mkRenov=(trades,units,unitLabel)=>({
+  floors:['B2','B1','1F','2F','3F','4F','5F','RF'],trades,units,
+  unitLabel:unitLabel||'戶別',floorUnits:{},cells:{}
+});
+const DEF={
+  todos:[],
+  renov_indoor:mkRenov([
+    {id:'ti1',name:'泥作',   subs:['打底','粉刷','貼磚']},
+    {id:'ti2',name:'輕隔間', subs:['骨架','封板','收邊']},
+    {id:'ti3',name:'油漆',   subs:['批土','底漆','面漆']},
+    {id:'ti4',name:'鋁門窗', subs:['框架安裝','玻璃安裝','收邊']},
+    {id:'ti5',name:'水電',   subs:['配管','拉線','面板安裝']},
+  ],['A戶','B戶','C戶','D戶'],'戶別'),
+  renov_outdoor:mkRenov([
+    {id:'to1',name:'外牆工程',   subs:['打底','粉刷','面磚']},
+    {id:'to2',name:'防水工程',   subs:['清潔','底油','防水層']},
+    {id:'to3',name:'屋頂工程',   subs:['隔熱','防水','收邊']},
+    {id:'to4',name:'景觀工程',   subs:['植栽','鋪面','照明']},
+    {id:'to5',name:'雨水排水',   subs:['管線','集水井','測試']},
+  ],['A棟','B棟','C棟','D棟'],'棟別'),
+  struct:{
+    items:[
+      {id:'s1',name:'基礎工程',startDate:'2026-01-05',endDate:'2026-02-28',expanded:false,floors:[
+        {id:'f1',name:'B3',startDate:'2026-01-05',endDate:'2026-01-25'},
+        {id:'f2',name:'B2',startDate:'2026-01-20',endDate:'2026-02-15'},
+        {id:'f3',name:'B1',startDate:'2026-02-10',endDate:'2026-02-28'},
+      ]},
+      {id:'s2',name:'結構體',startDate:'2026-03-01',endDate:'2026-07-15',expanded:false,floors:[
+        {id:'f4',name:'1F',startDate:'2026-03-01',endDate:'2026-03-22'},
+        {id:'f5',name:'2F',startDate:'2026-03-20',endDate:'2026-04-12'},
+        {id:'f6',name:'3F',startDate:'2026-04-10',endDate:'2026-05-01'},
+        {id:'f7',name:'4F',startDate:'2026-04-28',endDate:'2026-05-20'},
+        {id:'f8',name:'5F',startDate:'2026-05-18',endDate:'2026-06-08'},
+        {id:'f9',name:'RF',startDate:'2026-06-06',endDate:'2026-07-15'},
+      ]},
+      {id:'s3',name:'屋頂防水',startDate:'2026-07-16',endDate:'2026-08-10',expanded:false,floors:[]},
+    ],
+  },
+};
+let S=JSON.parse(JSON.stringify(DEF));
+let _renovKey='indoor';
+
+function save(){try{localStorage.setItem('capp4',JSON.stringify(S));}catch(e){}}
+function load(){
+  try{
+    const raw=localStorage.getItem('capp4')||localStorage.getItem('capp3')||localStorage.getItem('capp2')||localStorage.getItem('capp');
+    if(raw){
+      const p=JSON.parse(raw);
+      S={...DEF,...p};
+      if(p.renov&&!p.renov_indoor){S.renov_indoor={...DEF.renov_indoor,...p.renov};delete S.renov;}
+      S.renov_indoor={...DEF.renov_indoor,...(S.renov_indoor||{})};
+      S.renov_outdoor={...DEF.renov_outdoor,...(S.renov_outdoor||{})};
+      if(!S.renov_indoor.floorUnits)S.renov_indoor.floorUnits={};
+      if(!S.renov_outdoor.floorUnits)S.renov_outdoor.floorUnits={};
+      if(!S.renov_indoor.unitLabel)S.renov_indoor.unitLabel='戶別';
+      if(!S.renov_outdoor.unitLabel)S.renov_outdoor.unitLabel='棟別';
+      S.struct={...DEF.struct,...(S.struct||{})};
+      (S.todos||[]).forEach(t=>{if(!('assignee' in t))t.assignee='';});
+    }
+  }catch(e){}
+}
+
+function exportData(){
+  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);
+  a.download=`工程進度_${today()}.json`;a.click();
+}
+function importData(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{try{S=JSON.parse(ev.target.result);save();location.reload();}
+      catch{alert('檔案格式錯誤');}};
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+// ══════════ NAVIGATION ══════════
+function go(page,arg){
+  if(page==='renov')_renovKey=arg||'indoor';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(page==='home')  renderHome();
+  if(page==='renov') renderRenov();
+  if(page==='struct')renderStruct();
+}
+
+// ══════════ MODAL ══════════
+function openModal(title,body,wide,extraBtn){
+  document.getElementById('mtl').textContent=title;
+  document.getElementById('mbd').innerHTML=body;
+  document.getElementById('mhbtns').innerHTML=extraBtn||'';
+  document.getElementById('mb').className=wide?'wide':'';
+  document.getElementById('ov').classList.add('open');
+}
+function closeModal(e){
+  if(e&&e.target!==document.getElementById('ov'))return;
+  document.getElementById('ov').classList.remove('open');
+}
+function fclose(){document.getElementById('ov').classList.remove('open');}
+
+// ══════════ POPOVER MENU ══════════
+let _popCtx=null; // {kind, idx, arr, onReorder, onDelete, label}
+function openPop(e,ctx){
+  e.stopPropagation();
+  _popCtx=ctx;
+  const pop=document.getElementById('pop');
+  const r=e.currentTarget.getBoundingClientRect();
+  const extras=ctx.extras||[];
+  const H=150+extras.length*34;
+  pop.style.top=Math.min(r.bottom+4,window.innerHeight-H-8)+'px';
+  pop.style.left=Math.min(r.left,window.innerWidth-160)+'px';
+  const isH=ctx.axis==='h';
+  const extraHtml=extras.length
+    ? `<hr>${extras.map((x,i)=>`<button onclick="popExtra(${i})">${esc(x.label)}</button>`).join('')}`
+    : '';
+  pop.innerHTML=`
+    <button onclick="popMove(-1)">${isH?'◀ 左移':'▲ 上移'}</button>
+    <button onclick="popMove(1)">${isH?'▶ 右移':'▼ 下移'}</button>
+    <button onclick="popMove(-99)">⇤ 移到首位</button>
+    <button onclick="popMove(99)">⇥ 移到末位</button>
+    ${extraHtml}
+    <hr>
+    <button class="dgr" onclick="popDel()">🗑 刪除</button>
+  `;
+  pop.classList.add('open');
+}
+function closePop(){document.getElementById('pop').classList.remove('open');_popCtx=null;}
+document.addEventListener('mousedown',(e)=>{
+  const pop=document.getElementById('pop');
+  if(pop.classList.contains('open')&&!pop.contains(e.target)&&!e.target.closest('.dotbtn'))closePop();
+});
+document.addEventListener('scroll',()=>closePop(),true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop();});
+
+function popMove(dir){
+  if(!_popCtx)return;
+  const{arr,idx}=_popCtx;
+  let to;
+  if(dir===-99)to=0;
+  else if(dir===99)to=arr.length-1;
+  else to=idx+dir;
+  if(moveArr(arr,idx,to)){save();_popCtx.onReorder();}
+  closePop();
+}
+function popDel(){
+  if(!_popCtx)return;
+  const{onDelete}=_popCtx;
+  closePop();
+  onDelete();
+}
+function popExtra(i){
+  if(!_popCtx)return;
+  const fn=_popCtx.extras[i].fn;
+  closePop();
+  fn();
+}
+
+// ══════════ DRAG & DROP ══════════
+let _drag=null;
+function dragStart(e,kind,idx){
+  _drag={kind,idx};
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain',String(idx));
+  e.currentTarget.classList.add('dragging');
+}
+function dragOver(e,kind,idx){
+  if(!_drag||_drag.kind!==kind||_drag.idx===idx)return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  e.currentTarget.classList.add('dropzone');
+}
+function dragLeave(e){e.currentTarget.classList.remove('dropzone');}
+function dragDrop(e,kind,idx,arr,onReorder){
+  e.preventDefault();
+  e.currentTarget.classList.remove('dropzone');
+  if(!_drag||_drag.kind!==kind||_drag.idx===idx)return;
+  if(moveArr(arr,_drag.idx,idx)){save();onReorder();}
+  _drag=null;
+}
+function dragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.dropzone').forEach(el=>el.classList.remove('dropzone'));
+  _drag=null;
+}
+
+// ══════════ HOME ══════════
+function renderHome(){
+  const td=today();
+  document.getElementById('ddisp').textContent=fmtL(td);
+  document.getElementById('tdt').value=td;
+  renderTodos();
+}
+const getEff=t=>(!t.done&&t.date<today())?today():t.date;
+const getDly=t=>{if(t.done)return 0;return Math.max(0,diffD(t.originalDate,getEff(t)));};
+const dayItems=d=>S.todos.filter(t=>getEff(t)===d);
+
+function renderTodos(){
+  const td=today(),days=rollWeekDays();
+  document.getElementById('thr').innerHTML=days.map(d=>
+    `<th class="${d===td?'tc':''}">${fmtW(d)}${d===td?' ◀':''}</th>`
+  ).join('');
+  document.getElementById('tbr').innerHTML=days.map(d=>{
+    const its=dayItems(d);
+    return`<td class="${d===td?'tc':''}">${its.map(t=>{
+      const dl=getDly(t);
+      const cl=t.done?'#475569':dl>=2?'#ef4444':dl===1?'#eab308':'#e2e8f0';
+      const dk=t.done?'line-through':'none';
+      return`<div class="ti">
+        <input type="checkbox" class="ck"${t.done?' checked':''} onchange="togTodo('${t.id}')">
+        <span class="tx" style="color:${cl};text-decoration:${dk};">${esc(t.text)}${
+          dl>0&&!t.done?`<span style="font-size:9px;opacity:.65;"> (${dl}天前)</span>`:''
+        }${t.assignee?`<span class="asg">@${esc(t.assignee)}</span>`:''}</span>
+        <span class="acg">
+          <button class="ac" onclick="editTodo('${t.id}')" title="編輯">✎</button>
+          <button class="ac" onclick="delTodo('${t.id}')" title="刪除">×</button>
+        </span>
+      </div>`;
+    }).join('')}</td>`;
+  }).join('');
+}
+function addTodo(){
+  const txt=document.getElementById('ttx').value.trim();
+  const dt=document.getElementById('tdt').value||today();
+  const asg=document.getElementById('tasg').value.trim();
+  if(!txt)return;
+  S.todos.push({id:uid(),text:txt,done:false,date:dt,originalDate:dt,assignee:asg});
+  save();
+  document.getElementById('ttx').value='';
+  document.getElementById('tasg').value='';
+  renderTodos();
+}
+function togTodo(id){
+  const t=S.todos.find(x=>x.id===id);if(t){t.done=!t.done;save();renderTodos();}
+}
+function delTodo(id){
+  if(!confirm('確定刪除此待辦事項？'))return;
+  S.todos=S.todos.filter(x=>x.id!==id);save();renderTodos();
+}
+function editTodo(id){
+  const t=S.todos.find(x=>x.id===id);if(!t)return;
+  openModal('編輯待辦事項',`<div class="f fc g3">
+    <label class="lbl">內容 <input id="etx" class="inp" value="${esc(t.text)}"></label>
+    <label class="lbl">日期 <input type="date" id="edt" class="inp" value="${t.date}"></label>
+    <label class="lbl">處理人員 <input id="easg" class="inp" value="${esc(t.assignee||'')}" placeholder="可留空"></label>
+    <label style="display:flex;align-items:center;gap:6px;color:var(--mut);font-size:12px;cursor:pointer;margin-top:4px;">
+      <input type="checkbox" id="erd" style="accent-color:#60a5fa;">
+      重置延期（把原始日期也改為新日期，清除「N天前」標示）
+    </label>
+    <button class="btn bp" style="padding:10px;" onclick="doEditTodo('${esc(id)}')">儲存</button>
+  </div>`);
+}
+function doEditTodo(id){
+  const t=S.todos.find(x=>x.id===id);if(!t)return;
+  const txt=document.getElementById('etx').value.trim();
+  const dt =document.getElementById('edt').value;
+  const asg=document.getElementById('easg').value.trim();
+  const rd =document.getElementById('erd').checked;
+  if(!txt||!dt){alert('內容與日期不可空白');return;}
+  t.text=txt;t.date=dt;t.assignee=asg;
+  if(rd)t.originalDate=dt;
+  save();fclose();renderTodos();
+}
+document.getElementById('ttx').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo();});
+document.getElementById('tasg').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo();});
+
+// ══════════ RENOVATION ══════════
+const PC=[[0,'#0f172a'],[1,'#1e3a5f'],[25,'#1e40af'],[50,'#1d4ed8'],[75,'#3b82f6'],[100,'#15803d']];
+const pBg=p=>{for(let i=PC.length-1;i>=0;i--)if(p>=PC[i][0])return PC[i][1];return PC[0][1];};
+const R=()=>S['renov_'+_renovKey];
+
+// Floor-specific unit helpers
+const getFlUnits=fl=>R().floorUnits?.[fl]?.list || R().units;
+const getFlLabel=fl=>R().floorUnits?.[fl]?.label || R().unitLabel || '戶別';
+const isCustomFl=fl=>!!R().floorUnits?.[fl];
+// Returns reference to the editable units array (floor-specific if customized, else global)
+const getEditableUnits=()=>{
+  const fu=R().floorUnits?.[_fl];
+  return fu?fu.list:R().units;
+};
+
+function getCell(fl,tid){
+  const c=R().cells[`${fl}_${tid}`];
+  if(!c)return{units:{},notes:{}};
+  if(!c.notes)c.notes={};
+  return c;
+}
+function ensureCell(fl,tid){
+  const k=`${fl}_${tid}`;
+  if(!R().cells[k])R().cells[k]={units:{},notes:{}};
+  if(!R().cells[k].notes)R().cells[k].notes={};
+  return R().cells[k];
+}
+function calcPct(cu,subs,units){
+  const v=[];units.forEach(u=>subs.forEach(s=>v.push(cu?.[u]?.[s]??0)));
+  return v.length?Math.round(v.reduce((a,b)=>a+b)/v.length):0;
+}
+function getCPct(fl,tid){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return 0;
+  return calcPct(getCell(fl,tid).units,tr.subs,getFlUnits(fl));
+}
+
+function renderRenov(){
+  const title=_renovKey==='indoor'?'室內裝修進度':'室外裝修進度';
+  document.getElementById('rhd').textContent=title;
+  document.getElementById('prtRH').textContent=title;
+  document.getElementById('prtRD').textContent=`列印日期：${fmtL(today())}`;
+
+  document.getElementById('rleg').innerHTML=PC.map(([p,c])=>
+    `<span><span style="width:14px;height:14px;border-radius:3px;display:inline-block;
+      background:${c};border:1px solid #334155;"></span>${p===0?'未開始':p===100?'完成':p+'%'}</span>`
+  ).join('');
+
+  const {floors,trades}=R();
+  let h=`<thead><tr><th class="tlf">工種 ↓ / 樓層 →</th>`;
+  floors.forEach((fl,i)=>{
+    h+=`<th draggable="true"
+      ondragstart="dragStart(event,'floor',${i})"
+      ondragover="dragOver(event,'floor',${i})"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,'floor',${i},R().floors,renderRenov)"
+      ondragend="dragEnd(event)">
+      <div class="hdrow">
+        <span>${esc(fl)}</span>
+        <button class="dotbtn" onclick="openFlMenu(event,${i})" title="選項">⋮</button>
+      </div></th>`;
+  });
+  h+=`<th style="background:var(--bg);border:1px solid var(--bg3);padding:6px;">
+    <button class="btn bt bsm" onclick="openAddFloor()">＋ 樓層</button></th>
+  </tr></thead><tbody>`;
+
+  trades.forEach((tr,ti)=>{
+    h+=`<tr><td class="tnm" draggable="true"
+      ondragstart="dragStart(event,'trade',${ti})"
+      ondragover="dragOver(event,'trade',${ti})"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,'trade',${ti},R().trades,renderRenov)"
+      ondragend="dragEnd(event)">
+      <div class="hdrow lf">
+        <span>${esc(tr.name)}</span>
+        <button class="dotbtn" onclick="openTrMenu(event,${ti})" title="選項">⋮</button>
+      </div></td>`;
+    floors.forEach(fl=>{
+      const p=getCPct(fl,tr.id);
+      h+=`<td class="pc" style="background:${pBg(p)};"
+        onclick="openCell('${esc(fl)}','${esc(tr.id)}')"
+        data-fl="${esc(fl)}" data-tid="${esc(tr.id)}">
+        <div class="pcv">${p>0?p+'%':'—'}</div></td>`;
+    });
+    h+=`<td style="background:var(--bg);border:1px solid var(--bg3);"></td></tr>`;
+  });
+
+  h+=`<tr>
+    <td style="background:var(--bg);border:1px solid var(--bg3);padding:6px;">
+      <button class="btn bp bsm" onclick="openAddTrade()">＋ 工種</button></td>
+    ${floors.map(()=>`<td style="background:var(--bg);border:1px solid var(--bg3);"></td>`).join('')}
+    <td style="background:var(--bg);border:1px solid var(--bg3);"></td>
+  </tr></tbody>`;
+  document.getElementById('rtb').innerHTML=h;
+}
+
+function openFlMenu(e,i){
+  const fl=R().floors[i];
+  openPop(e,{kind:'floor',idx:i,axis:'h',arr:R().floors,
+    onReorder:renderRenov,
+    onDelete:()=>delFloor(fl),
+    extras:[
+      {label:'✏️ 重新命名樓層', fn:()=>openRenameFloor(fl)},
+      {label:'⚙️ 設定戶別/區域', fn:()=>openFloorSettings(fl)},
+    ]});
+}
+function openTrMenu(e,i){
+  const tr=R().trades[i];
+  openPop(e,{kind:'trade',idx:i,axis:'v',arr:R().trades,
+    onReorder:renderRenov,
+    onDelete:()=>delTrade(tr.id),
+    extras:[
+      {label:'✏️ 重新命名工種', fn:()=>openRenameTrade(tr.id)},
+    ]});
+}
+
+function openRenameFloor(fl){
+  openModal(`重新命名樓層「${esc(fl)}」`,`<div class="f fc g3">
+    <label class="lbl">新名稱 <input id="rfn" class="inp" value="${esc(fl)}"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doRenameFloor('${esc(fl)}')">儲存</button>
+  </div>`);
+}
+function doRenameFloor(oldName){
+  const n=document.getElementById('rfn').value.trim();
+  if(!n){alert('名稱不可空白');return;}
+  if(n===oldName){fclose();return;}
+  if(R().floors.includes(n)){alert('已存在相同名稱樓層');return;}
+  // migrate floors list, floorUnits, cells keys
+  const i=R().floors.indexOf(oldName);
+  R().floors[i]=n;
+  if(R().floorUnits?.[oldName]){R().floorUnits[n]=R().floorUnits[oldName];delete R().floorUnits[oldName];}
+  Object.keys(R().cells).forEach(k=>{
+    if(k.startsWith(oldName+'_')){
+      const newK=n+k.slice(oldName.length);
+      R().cells[newK]=R().cells[k];delete R().cells[k];
+    }
+  });
+  save();fclose();renderRenov();
+}
+function openRenameTrade(tid){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return;
+  openModal(`重新命名工種「${esc(tr.name)}」`,`<div class="f fc g3">
+    <label class="lbl">新名稱 <input id="rtn" class="inp" value="${esc(tr.name)}"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doRenameTrade('${esc(tid)}')">儲存</button>
+  </div>`);
+}
+function doRenameTrade(tid){
+  const n=document.getElementById('rtn').value.trim();
+  if(!n){alert('名稱不可空白');return;}
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return;
+  tr.name=n;save();fclose();renderRenov();
+}
+
+function openFloorSettings(fl){
+  const isCustom=isCustomFl(fl);
+  const label=getFlLabel(fl);
+  const list=getFlUnits(fl);
+  const globalList=R().units;
+  const globalLabel=R().unitLabel||'戶別';
+
+  const statusLine=isCustom
+    ? `<div style="font-size:12px;color:var(--mut);padding:10px 12px;background:#1c1917;border-left:3px solid #fbbf24;border-radius:4px;">
+         此樓層目前使用：<b style="color:#fbbf24;">專屬設定</b>
+         <button class="btn bs bsm" style="margin-left:8px;" onclick="resetFloor('${esc(fl)}')">改回使用全域</button>
+         <div style="color:var(--dim);font-size:11px;margin-top:4px;">全域設定為：${esc(globalLabel)}（${globalList.map(esc).join('、')}）</div>
+       </div>`
+    : `<div style="font-size:12px;color:var(--mut);padding:10px 12px;background:#0c1e3a;border-left:3px solid #60a5fa;border-radius:4px;">
+         此樓層目前使用：<b style="color:#60a5fa;">全域設定</b>（${esc(globalLabel)}：${globalList.map(esc).join('、')}）
+         <div style="color:var(--dim);font-size:11px;margin-top:4px;">按下方儲存後將轉為此樓層專屬設定，不影響其他樓層</div>
+       </div>`;
+
+  const body=`<div class="f fc g3">
+    ${statusLine}
+    <label class="lbl">
+      名稱標籤（例如「戶別」、「區域」、「房間」、「棟別」）
+      <input id="flLbl" class="inp" value="${esc(label)}" placeholder="戶別">
+    </label>
+    <label class="lbl">
+      項目清單（每行一個，順序即為顯示順序）
+      <textarea id="flList" class="inp" rows="7"
+        style="resize:vertical;line-height:1.6;">${list.map(esc).join('\n')}</textarea>
+    </label>
+    <div style="font-size:11px;color:var(--dim);">
+      💡 已輸入的進度不會遺失。若改名後又改回相同名稱，原有資料會重新顯示。
+    </div>
+    <button class="btn bp" style="padding:10px;" onclick="saveFloorSettings('${esc(fl)}')">儲存為此樓層專屬設定</button>
+  </div>`;
+
+  openModal(`⚙️ 樓層 ${esc(fl)} 戶別/區域設定`,body);
+}
+
+function saveFloorSettings(fl){
+  const label=document.getElementById('flLbl').value.trim()||'戶別';
+  const list=document.getElementById('flList').value
+    .split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!list.length){alert('至少需要一個項目');return;}
+  const dup=list.filter((x,i)=>list.indexOf(x)!==i);
+  if(dup.length){alert('項目名稱不可重複：'+dup[0]);return;}
+  if(!R().floorUnits)R().floorUnits={};
+  R().floorUnits[fl]={label,list};
+  save();fclose();renderRenov();
+}
+
+function resetFloor(fl){
+  if(!confirm(`確定將「${fl}」改回使用全域設定？`))return;
+  if(R().floorUnits)delete R().floorUnits[fl];
+  save();fclose();renderRenov();
+}
+
+// ── Batch floor settings ──
+function openBatchFloorSettings(){
+  const floors=R().floors;
+  const globalLabel=R().unitLabel||'戶別';
+  const globalList=R().units;
+
+  // Group floors by their current unit config (for quick visual scan)
+  const groups=new Map();
+  floors.forEach(fl=>{
+    const key=isCustomFl(fl)
+      ? `custom:${getFlLabel(fl)}|${getFlUnits(fl).join(',')}`
+      : 'global';
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(fl);
+  });
+  let groupInfo='';
+  groups.forEach((fls,key)=>{
+    if(key==='global'){
+      groupInfo+=`<div style="font-size:11px;color:var(--dim);margin-bottom:3px;">
+        <b style="color:#60a5fa;">全域</b> ${esc(globalLabel)}（${globalList.map(esc).join('、')}）：${fls.map(esc).join('、')}
+      </div>`;
+    }else{
+      const [,rest]=key.split(':');
+      const [lbl,lst]=rest.split('|');
+      groupInfo+=`<div style="font-size:11px;color:var(--dim);margin-bottom:3px;">
+        <b style="color:#fbbf24;">專屬</b> ${esc(lbl)}（${lst.split(',').map(esc).join('、')}）：${fls.map(esc).join('、')}
+      </div>`;
+    }
+  });
+
+  const body=`<div class="f fc g3">
+    <div style="font-size:12px;color:var(--mut);padding:10px 12px;background:var(--bg);border-radius:6px;">
+      <b style="color:#fff;">目前各樓層狀態：</b>
+      ${groupInfo}
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:12px;color:var(--mut);font-weight:700;">1. 選擇要套用的樓層</span>
+        <button class="btn bs bsm" onclick="bfSelAll(1)">全選</button>
+        <button class="btn bs bsm" onclick="bfSelAll(0)">全不選</button>
+        <button class="btn bs bsm" onclick="bfSelAll(-1)">反選</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${floors.map(fl=>{
+          const cust=isCustomFl(fl);
+          const lbl=cust?getFlLabel(fl):globalLabel;
+          return `<label style="display:flex;align-items:center;gap:5px;background:var(--bg);padding:7px 11px;border-radius:6px;border:1px solid var(--bg3);cursor:pointer;font-size:12px;user-select:none;">
+            <input type="checkbox" class="bfCk" data-fl="${esc(fl)}" style="accent-color:#60a5fa;cursor:pointer;">
+            <span style="color:#fff;font-weight:600;">${esc(fl)}</span>
+            <span style="font-size:10px;color:${cust?'#fbbf24':'#60a5fa'};">(${esc(lbl)})</span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:12px;color:var(--mut);font-weight:700;margin-bottom:6px;">
+        2. 設定要套用的戶別/區域（快速預設）
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn bs bsm" onclick="bfPreset('戶別','A戶,B戶,C戶,D戶')">戶別 A~D</button>
+        <button class="btn bs bsm" onclick="bfPreset('戶別','A戶,B戶')">戶別 A~B</button>
+        <button class="btn bs bsm" onclick="bfPreset('區域','車道區,機房區,儲藏室')">地下室區域</button>
+        <button class="btn bs bsm" onclick="bfPreset('區域','停車場,機房,儲藏室,電梯機房')">地下室完整</button>
+        <button class="btn bs bsm" onclick="bfPreset('棟別','A棟,B棟,C棟,D棟')">棟別 A~D</button>
+        <button class="btn bs bsm" onclick="bfPreset('區域','屋頂,露台,機房')">屋頂區域</button>
+      </div>
+
+      <label class="lbl" style="margin-bottom:8px;">
+        名稱標籤
+        <input id="bfLbl" class="inp" value="${esc(globalLabel)}" placeholder="戶別 / 區域 / 棟別">
+      </label>
+      <label class="lbl">
+        項目清單（每行一個）
+        <textarea id="bfList" class="inp" rows="5" style="resize:vertical;line-height:1.6;">${globalList.map(esc).join('\n')}</textarea>
+      </label>
+    </div>
+
+    <div style="font-size:11px;color:var(--dim);padding-top:4px;">
+      💡 套用後，所選樓層將使用同一份專屬設定。已輸入的進度資料會保留。
+    </div>
+
+    <div class="f g2 mt2">
+      <button class="btn bs" style="flex:1;padding:11px;" onclick="bfReset()">所選樓層改回全域</button>
+      <button class="btn bp" style="flex:2;padding:11px;" onclick="bfApply()">套用至所選樓層</button>
+    </div>
+  </div>`;
+
+  openModal('📋 批次設定戶別/區域',body,true);
+}
+
+function bfSelAll(mode){
+  document.querySelectorAll('.bfCk').forEach(c=>{
+    c.checked=mode===-1?!c.checked:!!mode;
+  });
+}
+function bfPreset(label,csv){
+  const lbl=document.getElementById('bfLbl');
+  const lst=document.getElementById('bfList');
+  if(lbl)lbl.value=label;
+  if(lst)lst.value=csv.split(',').join('\n');
+}
+function bfGetSelFloors(){
+  return Array.from(document.querySelectorAll('.bfCk:checked')).map(c=>c.dataset.fl);
+}
+function bfApply(){
+  const sel=bfGetSelFloors();
+  if(!sel.length){alert('請至少選擇一個樓層');return;}
+  const label=document.getElementById('bfLbl').value.trim()||'戶別';
+  const list=document.getElementById('bfList').value
+    .split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!list.length){alert('項目清單不可空白');return;}
+  const dup=list.filter((x,i)=>list.indexOf(x)!==i);
+  if(dup.length){alert('項目名稱不可重複：'+dup[0]);return;}
+  if(!R().floorUnits)R().floorUnits={};
+  sel.forEach(fl=>{
+    R().floorUnits[fl]={label,list:[...list]};
+  });
+  save();fclose();renderRenov();
+  setTimeout(()=>alert(`✓ 已將 ${sel.length} 個樓層套用「${label}：${list.join('、')}」`),100);
+}
+function bfReset(){
+  const sel=bfGetSelFloors();
+  if(!sel.length){alert('請至少選擇一個樓層');return;}
+  if(!confirm(`確定將 ${sel.length} 個樓層改回使用全域設定？`))return;
+  if(!R().floorUnits)R().floorUnits={};
+  sel.forEach(fl=>delete R().floorUnits[fl]);
+  save();fclose();renderRenov();
+  setTimeout(()=>alert(`✓ 已將 ${sel.length} 個樓層改回全域設定`),100);
+}
+
+function openAddTrade(){
+  openModal('新增工種',`<div class="f fc g3">
+    <label class="lbl">工種名稱 <input id="mnm" class="inp" placeholder="例：磁磚工程"></label>
+    <label class="lbl">細項（逗號分隔）<input id="msb" class="inp" placeholder="打底,粉刷,貼磚"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doAddTrade()">確認新增</button>
+  </div>`);
+}
+function doAddTrade(){
+  const n=document.getElementById('mnm').value.trim();if(!n)return;
+  const subs=document.getElementById('msb').value.split(/[,，、\n]/).map(s=>s.trim()).filter(Boolean);
+  R().trades.push({id:uid(),name:n,subs});save();fclose();renderRenov();
+}
+function delTrade(id){
+  if(!confirm('確定刪除此工種及所有相關進度？'))return;
+  R().trades=R().trades.filter(t=>t.id!==id);save();renderRenov();
+}
+function openAddFloor(){
+  openModal('新增樓層',`<div class="f fc g3">
+    <label class="lbl">樓層名稱 <input id="mfn" class="inp" placeholder="例：6F"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doAddFloor()">確認新增</button>
+  </div>`);
+}
+function doAddFloor(){
+  const n=document.getElementById('mfn').value.trim();if(!n)return;
+  if(R().floors.includes(n)){alert('樓層名稱重複');return;}
+  R().floors.push(n);save();fclose();renderRenov();
+}
+function delFloor(fl){
+  if(!confirm(`確定刪除樓層「${fl}」？`))return;
+  R().floors=R().floors.filter(f=>f!==fl);
+  if(R().floorUnits)delete R().floorUnits[fl];
+  save();renderRenov();
+}
+
+// ══════════ CELL MODAL ══════════
+let _fl='',_tid='',_unit='',_sub='';
+
+function openCell(fl,tid){_fl=fl;_tid=tid;renderCellMatrix();}
+
+function renderCellMatrix(){
+  const tr=R().trades.find(t=>t.id===_tid);if(!tr)return;
+  const cell=getCell(_fl,_tid);
+  const units=getFlUnits(_fl);
+  const label=getFlLabel(_fl);
+  const isCustom=isCustomFl(_fl);
+
+  const tag=isCustom
+    ? `<span style="font-size:9px;color:#fbbf24;font-weight:normal;background:#78350f;padding:1px 5px;border-radius:3px;margin-left:4px;">專屬</span>`
+    : `<span style="font-size:9px;color:#60a5fa;font-weight:normal;background:#1e3a5f;padding:1px 5px;border-radius:3px;margin-left:4px;">全域</span>`;
+
+  let h=`<div style="overflow-x:auto;"><table class="ctb"><thead><tr><th class="clf">細項 \\ ${esc(label)}${tag}</th>`;
+  units.forEach((u,ui)=>{
+    h+=`<th draggable="true"
+      ondragstart="dragStart(event,'unit',${ui})"
+      ondragover="dragOver(event,'unit',${ui})"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,'unit',${ui},getEditableUnits(),renderCellMatrix)"
+      ondragend="dragEnd(event)">
+      <div class="hdrow">
+        <span style="color:#93c5fd;">${esc(u)}</span>
+        <button class="dotbtn" onclick="openUnMenu(event,${ui})">⋮</button>
+      </div></th>`;
+  });
+  h+=`<th style="color:var(--dim);font-size:11px;">橫向平均</th></tr></thead><tbody>`;
+
+  tr.subs.forEach((s,si)=>{
+    h+=`<tr><td class="cnm" draggable="true"
+      ondragstart="dragStart(event,'sub',${si})"
+      ondragover="dragOver(event,'sub',${si})"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,'sub',${si},R().trades.find(t=>t.id==='${_tid}').subs,renderCellMatrix)"
+      ondragend="dragEnd(event)">
+      <div class="hdrow lf">
+        <span>${esc(s)}</span>
+        <button class="dotbtn" onclick="openSbMenu(event,${si})">⋮</button>
+      </div></td>`;
+    units.forEach((u,ui)=>{
+      const v=cell.units?.[u]?.[s]??0;
+      const nc=(cell.notes?.[u]?.[s]||[]).length;
+      h+=`<td><div class="cwrap">
+        <input type="number" class="pi" min="0" max="100" value="${v}"
+          data-si="${si}" data-ui="${ui}" oninput="updCell(this)">
+        <button class="nbtc ${nc?'has':''}" onclick="openNotes('${esc(u)}','${esc(s)}')" title="備註">📝${nc||''}</button>
+      </div></td>`;
+    });
+    const sa=calcRowAvg(cell,s,units);
+    h+=`<td id="sa${si}" style="color:#60a5fa;font-weight:700;">${sa}%</td></tr>`;
+  });
+
+  h+=`<tr class="avgr"><td style="color:var(--dim);font-weight:700;padding:8px 10px;text-align:left;">縱向平均</td>`;
+  units.forEach((u,ui)=>{
+    const ua=calcColAvg(cell,u,tr.subs);
+    h+=`<td id="ua${ui}" style="color:#34d399;font-weight:700;">${ua}%</td>`;
+  });
+  const tot=calcPct(cell.units,tr.subs,units);
+  h+=`<td id="tot" style="color:#f59e0b;font-weight:700;font-size:14px;">${tot}%</td></tr>`;
+  h+=`</tbody></table></div>
+
+  <div class="f g2 mt3 fw">
+    <button class="btn bt bsm" onclick="openAddSub()">＋ 新增細項</button>
+    <button class="btn bsm" style="background:var(--pur);color:#fff;" onclick="openAddUnit()">＋ 新增${esc(label)}</button>
+    <button class="btn bs bsm" onclick="openFloorSettings('${esc(_fl)}')">⚙️ 設定此樓層${esc(label)}</button>
+  </div>
+  <div class="mt3" style="font-size:11px;color:var(--dim);">
+    💡 ${isCustom
+      ? `此樓層使用<b style="color:#fbbf24;">專屬</b>設定，增刪排序僅影響此樓層`
+      : `此樓層使用<b style="color:#60a5fa;">全域</b>設定，增刪排序會影響所有用全域的樓層；點「⚙️ 設定」可改為此樓層專屬`}
+  </div>`;
+
+  // Print-only notes section
+  h+=buildPrintNotes(cell,tr);
+
+  const pdfBtn=`<button class="btn bs bsm" onclick="printCell()">📄 匯出 PDF</button>`;
+  openModal(`${esc(_fl)} — ${esc(tr.name)}　細部進度`,h,true,pdfBtn);
+}
+
+function buildPrintNotes(cell,tr){
+  let has=false,body='';
+  const units=getFlUnits(_fl);
+  units.forEach(u=>{
+    tr.subs.forEach(s=>{
+      const arr=cell.notes?.[u]?.[s]||[];
+      if(arr.length){
+        has=true;
+        body+=`<div class="pnote"><b>${esc(u)} × ${esc(s)}</b>
+          <ul style="margin:4px 0 0 18px;">
+          ${arr.map(n=>`<li>[${esc(n.author||'匿名')} · ${fmtDT(n.createdAt)}] ${esc(n.text)}</li>`).join('')}
+          </ul></div>`;
+      }
+    });
+  });
+  if(!has)return'';
+  return`<div class="prtnotes"><h3>📝 備註列表</h3>${body}</div>`;
+}
+
+function calcRowAvg(cell,s,units){
+  const v=units.map(u=>cell.units?.[u]?.[s]??0);
+  return v.length?Math.round(v.reduce((a,b)=>a+b)/v.length):0;
+}
+function calcColAvg(cell,u,subs){
+  const v=subs.map(s=>cell.units?.[u]?.[s]??0);
+  return v.length?Math.round(v.reduce((a,b)=>a+b)/v.length):0;
+}
+
+function updCell(inp){
+  const si=+inp.dataset.si,ui=+inp.dataset.ui;
+  const v=Math.max(0,Math.min(100,parseInt(inp.value)||0));
+  inp.value=v;
+  const tr=R().trades.find(t=>t.id===_tid);if(!tr)return;
+  const cell=ensureCell(_fl,_tid);
+  const units=getFlUnits(_fl);
+  const u=units[ui],s=tr.subs[si];
+  if(!cell.units[u])cell.units[u]={};
+  cell.units[u][s]=v;
+  save();
+  const saEl=document.getElementById('sa'+si);
+  const uaEl=document.getElementById('ua'+ui);
+  const totEl=document.getElementById('tot');
+  if(saEl)saEl.textContent=calcRowAvg(cell,s,units)+'%';
+  if(uaEl)uaEl.textContent=calcColAvg(cell,u,tr.subs)+'%';
+  if(totEl)totEl.textContent=calcPct(cell.units,tr.subs,units)+'%';
+  const gc=document.querySelector(`[data-fl="${_fl}"][data-tid="${_tid}"]`);
+  if(gc){const p=getCPct(_fl,_tid);gc.style.background=pBg(p);gc.querySelector('.pcv').textContent=p>0?p+'%':'—';}
+}
+
+function openSbMenu(e,i){
+  const subs=R().trades.find(t=>t.id===_tid).subs;
+  openPop(e,{kind:'sub',idx:i,axis:'v',arr:subs,
+    onReorder:renderCellMatrix,
+    onDelete:()=>delSub(i)});
+}
+function openUnMenu(e,i){
+  const arr=getEditableUnits();
+  openPop(e,{kind:'unit',idx:i,axis:'h',arr:arr,
+    onReorder:renderCellMatrix,
+    onDelete:()=>delUnit(i)});
+}
+function openAddSub(){
+  openModal('新增細項',`<div class="f fc g3">
+    <label class="lbl">細項名稱 <input id="mss" class="inp" placeholder="例：防水處理"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doAddSub()">確認新增</button>
+  </div>`);
+}
+function doAddSub(){
+  const n=document.getElementById('mss').value.trim();if(!n)return;
+  const tr=R().trades.find(t=>t.id===_tid);
+  if(tr&&!tr.subs.includes(n))tr.subs.push(n);
+  save();fclose();renderCellMatrix();
+}
+function delSub(i){
+  const tr=R().trades.find(t=>t.id===_tid);if(!tr)return;
+  if(tr.subs.length<=1){alert('至少需保留一個細項');return;}
+  if(!confirm(`確定刪除細項「${tr.subs[i]}」？`))return;
+  tr.subs.splice(i,1);save();renderCellMatrix();
+}
+function openAddUnit(){
+  const label=getFlLabel(_fl);
+  const isCustom=isCustomFl(_fl);
+  const hint=isCustom
+    ? `僅新增至此樓層專屬清單`
+    : `將新增至全域${esc(label)}清單（影響所有用全域的樓層）`;
+  openModal(`新增${esc(label)}`,`<div class="f fc g3">
+    <div style="font-size:11px;color:var(--dim);padding:6px 10px;background:var(--bg);border-radius:4px;">💡 ${hint}</div>
+    <label class="lbl">${esc(label)}名稱 <input id="muu" class="inp" placeholder="例：E戶 / 車道區"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doAddUnit()">確認新增</button>
+  </div>`);
+}
+function doAddUnit(){
+  const n=document.getElementById('muu').value.trim();if(!n)return;
+  const arr=getEditableUnits();
+  if(arr.includes(n)){alert('名稱重複');return;}
+  arr.push(n);save();fclose();renderCellMatrix();
+}
+function delUnit(i){
+  const arr=getEditableUnits();
+  if(arr.length<=1){alert('至少需保留一個項目');return;}
+  if(!confirm(`確定刪除「${arr[i]}」？`))return;
+  arr.splice(i,1);save();renderCellMatrix();
+}
+
+// ══════════ NOTES ══════════
+function openNotes(unit,sub){_unit=unit;_sub=sub;renderNotesView();}
+function renderNotesView(){
+  const cell=getCell(_fl,_tid);
+  const list=cell.notes?.[_unit]?.[_sub]||[];
+  const tr=R().trades.find(t=>t.id===_tid);
+  const trName=tr?tr.name:'';
+
+  let h=`<div class="f ai g2 mt2" style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bg3);">
+    <button class="btn bs bsm" onclick="renderCellMatrix()">← 回矩陣</button>
+    <div style="font-size:13px;color:var(--mut);">
+      <b style="color:#fbbf24;">${esc(_fl)} · ${esc(trName)}</b> / 
+      <span style="color:#93c5fd;">${esc(_unit)}</span> × 
+      <span style="color:#34d399;">${esc(_sub)}</span>
+    </div>
+  </div>`;
+
+  if(list.length===0){
+    h+=`<div style="text-align:center;color:var(--dim);padding:30px 0;font-size:13px;">
+      尚無備註。下方新增記錄需要強調的區域或問題 👇</div>`;
+  }else{
+    h+=list.map(n=>`<div class="note">
+      <div class="nmt">
+        <span><b style="color:#a78bfa;">${esc(n.author||'匿名')}</b> · ${fmtDT(n.createdAt)}</span>
+        <button class="bd" onclick="delNote('${esc(n.id)}')">刪除</button>
+      </div>
+      <div class="ntx">${esc(n.text)}</div>
+    </div>`).join('');
+  }
+
+  h+=`<div class="mt4" style="border-top:1px solid var(--bg3);padding-top:14px;">
+    <div class="f fc g2">
+      <input id="nau" class="inp" placeholder="你的名字（選填）" style="max-width:220px;">
+      <textarea id="ntx" class="inp" rows="3"
+        placeholder="例：東側牆面有裂縫需補強、窗框收邊不平整..."
+        style="resize:vertical;min-height:72px;"></textarea>
+      <button class="btn bp" style="padding:10px;align-self:flex-start;" onclick="addNote()">＋ 新增備註</button>
+    </div>
+  </div>`;
+
+  openModal(`📝 備註：${esc(_fl)} / ${esc(_unit)} × ${esc(_sub)}`,h,true);
+}
+function addNote(){
+  const tx=document.getElementById('ntx').value.trim();
+  const au=document.getElementById('nau').value.trim();
+  if(!tx){alert('備註內容不可空白');return;}
+  const cell=ensureCell(_fl,_tid);
+  if(!cell.notes[_unit])cell.notes[_unit]={};
+  if(!cell.notes[_unit][_sub])cell.notes[_unit][_sub]=[];
+  cell.notes[_unit][_sub].push({
+    id:uid(),author:au||'匿名',text:tx,createdAt:new Date().toISOString()
+  });
+  save();renderNotesView();
+}
+function delNote(nid){
+  if(!confirm('確定刪除此備註？'))return;
+  const cell=getCell(_fl,_tid);
+  const arr=cell.notes?.[_unit]?.[_sub]||[];
+  const i=arr.findIndex(n=>n.id===nid);
+  if(i>=0){arr.splice(i,1);save();renderNotesView();}
+}
+
+// ══════════ STRUCTURE ══════════
+function getCols(){
+  const cs=[];
+  S.struct.items.forEach(it=>{
+    cs.push({type:'item',id:it.id,name:it.name,start:it.startDate,end:it.endDate,exp:it.expanded});
+    if(it.expanded)it.floors.forEach(fl=>
+      cs.push({type:'fl',id:fl.id,name:fl.name,start:fl.startDate,end:fl.endDate,iid:it.id}));
+  });
+  return cs;
+}
+function getRange(){
+  if(!S.struct.items.length)return{minD:today(),maxD:addD(today(),30)};
+  let mn='9999-99',mx='0000-00';
+  S.struct.items.forEach(it=>{
+    if(it.startDate<mn)mn=it.startDate;
+    if(it.endDate>mx)mx=it.endDate;
+  });
+  return{minD:mn,maxD:mx};
+}
+function getDts(mn,mx){const ds=[];let c=mn;while(c<=mx){ds.push(c);c=addD(c,1);}return ds;}
+
+function renderStruct(){
+  const cols=getCols();
+  const{minD,maxD}=getRange();
+  const dates=getDts(minD,maxD);
+  const td=today();
+  document.getElementById('sinf').textContent=`${S.struct.items.length} 個項目 • ${dates.length} 天`;
+
+  let h=`<thead><tr><th class="gcn">日期 (週)</th>`;
+  cols.forEach(c=>{
+    const dur=diffD(c.start,c.end)+1;
+    if(c.type==='item'){
+      h+=`<th class="gih" onclick="togItem('${c.id}')" style="cursor:pointer;">
+        <div style="color:#93c5fd;font-weight:700;font-size:12px;">${c.exp?'▲ ':'▼ '}${esc(c.name)}</div>
+        <div style="color:var(--dim);font-size:9px;margin-top:2px;">${fmtS(c.start)}～${fmtS(c.end)}</div>
+        <div style="color:#475569;font-size:9px;">${dur}天</div>
+        <div style="display:flex;gap:3px;justify-content:center;margin-top:3px;">
+          <button class="bd" onclick="event.stopPropagation();openAddFlItem('${c.id}')">+樓層</button>
+          <button class="bd" onclick="event.stopPropagation();delItem('${c.id}')">刪</button>
+        </div></th>`;
+    }else{
+      h+=`<th class="gfh">
+        <div style="color:#7dd3fc;font-weight:700;">${esc(c.name)}</div>
+        <div style="color:var(--dim);font-size:9px;">${fmtS(c.start)}～${fmtS(c.end)}</div>
+        <div style="color:#475569;font-size:9px;">${dur}天</div>
+        <button class="bd" style="margin-top:3px;" onclick="delFlItem('${c.iid}','${c.id}')">刪</button>
+      </th>`;
+    }
+  });
+  h+=`</tr></thead><tbody>`;
+
+  let pm='';
+  dates.forEach(dt=>{
+    const d=toDt(dt),dow=d.getDay();
+    const ym=dt.slice(0,7);
+    const wk=dow===0||dow===6;
+    const isTd=dt===td;
+    if(ym!==pm){
+      pm=ym;const[y,m]=ym.split('-');
+      h+=`<tr class="mrow"><td colspan="${1+cols.length}">── ${y}年${+m}月 ──</td></tr>`;
+    }
+    const rc=isTd?'tdr':wk?'wkr':'';
+    h+=`<tr class="${rc}"${isTd?' id="tdr"':''}>
+      <td class="gdc">${fmtS(dt)}&nbsp;<span style="color:${isTd?'#93c5fd':wk?'#374151':'#334155'};">(${DOW[dow]})</span>${isTd?'&nbsp;<span style="font-size:8px;color:#60a5fa;">◀</span>':''}</td>`;
+    cols.forEach(c=>{
+      const act=dt>=c.start&&dt<=c.end;
+      const bg=act?(c.type==='item'?'background:#1d4ed8;':'background:#0891b2;'):'';
+      h+=`<td style="${bg}min-width:96px;"></td>`;
+    });
+    h+=`</tr>`;
+  });
+  h+=`</tbody>`;
+  document.getElementById('stb').innerHTML=h;
+
+  setTimeout(()=>{const el=document.getElementById('tdr');
+    if(el)el.scrollIntoView({block:'center',behavior:'smooth'});},150);
+}
+function scrollToToday(){const el=document.getElementById('tdr');
+  if(el)el.scrollIntoView({block:'center',behavior:'smooth'});}
+function togItem(id){const it=S.struct.items.find(i=>i.id===id);
+  if(it){it.expanded=!it.expanded;save();renderStruct();}}
+function delItem(id){
+  if(!confirm('確定刪除此工程項目？'))return;
+  S.struct.items=S.struct.items.filter(i=>i.id!==id);save();renderStruct();}
+function delFlItem(iid,fid){
+  const it=S.struct.items.find(i=>i.id===iid);
+  if(it){it.floors=it.floors.filter(f=>f.id!==fid);save();renderStruct();}}
+
+function openAddItem(){
+  const td=today();
+  openModal('新增工程項目',`<div class="f fc g3">
+    <label class="lbl">項目名稱 <input id="min" class="inp" placeholder="例：外牆防水工程"></label>
+    <label class="lbl">開始日期 <input type="date" id="mis" class="inp" value="${td}" oninput="calcDur()"></label>
+    <label class="lbl">結束日期 <input type="date" id="mie" class="inp" value="${addD(td,60)}" oninput="calcDur()"></label>
+    <div id="mdur" style="font-size:12px;color:var(--dim);">共 61 天</div>
+    <button class="btn bp" style="padding:10px;" onclick="doAddItem()">確認新增</button>
+  </div>`);
+}
+function calcDur(){
+  const s=document.getElementById('mis')?.value;
+  const e=document.getElementById('mie')?.value;
+  const el=document.getElementById('mdur');
+  if(el&&s&&e&&s<=e)el.textContent=`共 ${diffD(s,e)+1} 天`;
+  else if(el)el.textContent='（結束日期需晚於開始日期）';
+}
+function doAddItem(){
+  const n=document.getElementById('min').value.trim();
+  const s=document.getElementById('mis').value;
+  const e=document.getElementById('mie').value;
+  if(!n||!s||!e||s>e){alert('請填寫完整資料');return;}
+  S.struct.items.push({id:uid(),name:n,startDate:s,endDate:e,expanded:false,floors:[]});
+  save();fclose();renderStruct();
+}
+function openAddFlItem(iid){
+  const it=S.struct.items.find(i=>i.id===iid);if(!it)return;
+  openModal('新增樓層',`<div class="f fc g3">
+    <label class="lbl">樓層名稱 <input id="mfln" class="inp" placeholder="例：6F"></label>
+    <label class="lbl">開始日期 <input type="date" id="mfls" class="inp" value="${it.startDate}" oninput="calcFlDur()"></label>
+    <label class="lbl">結束日期 <input type="date" id="mfle" class="inp" value="${it.endDate}" oninput="calcFlDur()"></label>
+    <div id="mfld" style="font-size:12px;color:var(--dim);">共 ${diffD(it.startDate,it.endDate)+1} 天</div>
+    <button class="btn bp" style="padding:10px;" onclick="doAddFlItem('${esc(iid)}')">確認新增</button>
+  </div>`);
+}
+function calcFlDur(){
+  const s=document.getElementById('mfls')?.value;
+  const e=document.getElementById('mfle')?.value;
+  const el=document.getElementById('mfld');
+  if(el&&s&&e&&s<=e)el.textContent=`共 ${diffD(s,e)+1} 天`;
+}
+function doAddFlItem(iid){
+  const n=document.getElementById('mfln').value.trim();
+  const s=document.getElementById('mfls').value;
+  const e=document.getElementById('mfle').value;
+  if(!n||!s||!e||s>e){alert('請填寫完整資料');return;}
+  const it=S.struct.items.find(i=>i.id===iid);if(!it)return;
+  it.floors.push({id:uid(),name:n,startDate:s,endDate:e});
+  it.expanded=true;save();fclose();renderStruct();
+}
+
+// ══════════ PRINT / PDF EXPORT ══════════
+function printRenov(){
+  document.body.classList.add('print-renov');
+  setTimeout(()=>{window.print();},60);
+}
+function printCell(){
+  document.body.classList.add('print-cell');
+  setTimeout(()=>{window.print();},60);
+}
+window.addEventListener('afterprint',()=>{
+  document.body.classList.remove('print-renov','print-cell');
+});
+
+// ══════════ INIT ══════════
+load();
+renderHome();
+</script>
+</body>
+</html>
