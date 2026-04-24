@@ -244,6 +244,9 @@ body{background:var(--bg);color:var(--txt);
   /* Hide everything first */
   body>*{display:none !important;}
 
+  /* Hide filtered columns/rows in print */
+  body.print-renov .hide-print{display:none !important;}
+
   /* PRINT RENOVATION */
   body.print-renov #page-renov{display:flex !important;height:auto !important;overflow:visible !important;}
   body.print-renov .phdr{display:none !important;}
@@ -2077,15 +2080,134 @@ function doAddFlItem(iid){
 
 // ══════════ PRINT / PDF EXPORT ══════════
 function printRenov(){
-  document.body.classList.add('print-renov');
-  setTimeout(()=>{window.print();},60);
+  openPrintFilter();
 }
+
+function openPrintFilter(){
+  const {floors,trades}=R();
+  const title=_renovKey==='indoor'?'室內裝修':'室外裝修';
+  const body=`<div class="f fc g3">
+    <div style="font-size:12px;color:var(--mut);line-height:1.6;
+      padding:10px 12px;background:var(--bg);border-radius:6px;border-left:3px solid #38bdf8;">
+      <b style="color:#7dd3fc;">📄 自選 PDF 匯出範圍</b><br>
+      勾選要匯出的樓層和工種，未勾選的不會出現在 PDF 中。
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--mut);font-weight:700;">📍 樓層</span>
+        <button class="btn bs bsm" onclick="pfSelAll('fl',1)">全選</button>
+        <button class="btn bs bsm" onclick="pfSelAll('fl',0)">全不選</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;max-height:180px;overflow-y:auto;
+        padding:8px;background:var(--bg);border-radius:6px;">
+        ${floors.map(fl=>`
+          <label style="display:flex;align-items:center;gap:5px;background:var(--bg2);
+            padding:6px 11px;border-radius:6px;border:1px solid var(--bg3);cursor:pointer;
+            font-size:12px;user-select:none;">
+            <input type="checkbox" class="pfCkFl" data-name="${esc(fl)}" checked
+              style="accent-color:#60a5fa;cursor:pointer;">
+            <span style="color:#fff;font-weight:600;">${esc(fl)}</span>
+          </label>`).join('')}
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--mut);font-weight:700;">🔨 工種</span>
+        <button class="btn bs bsm" onclick="pfSelAll('tr',1)">全選</button>
+        <button class="btn bs bsm" onclick="pfSelAll('tr',0)">全不選</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;max-height:180px;overflow-y:auto;
+        padding:8px;background:var(--bg);border-radius:6px;">
+        ${trades.map(tr=>`
+          <label style="display:flex;align-items:center;gap:5px;background:var(--bg2);
+            padding:6px 11px;border-radius:6px;border:1px solid var(--bg3);cursor:pointer;
+            font-size:12px;user-select:none;">
+            <input type="checkbox" class="pfCkTr" data-id="${esc(tr.id)}" checked
+              style="accent-color:#60a5fa;cursor:pointer;">
+            <span style="color:#fff;font-weight:600;">${esc(tr.name)}</span>
+          </label>`).join('')}
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--dim);">
+      💡 PDF 會根據瀏覽器列印對話框輸出，可選「另存為 PDF」儲存到電腦
+    </div>
+
+    <div class="f g2 mt2">
+      <button class="btn bs" style="flex:1;padding:11px;" onclick="fclose()">取消</button>
+      <button class="btn bp" style="flex:2;padding:11px;" onclick="doFilteredPrint()">📄 匯出 PDF</button>
+    </div>
+  </div>`;
+
+  openModal(`📄 ${title} - 匯出 PDF`,body);
+}
+
+function pfSelAll(kind,state){
+  const sel=kind==='fl'?'.pfCkFl':'.pfCkTr';
+  document.querySelectorAll(sel).forEach(c=>c.checked=!!state);
+}
+
+function doFilteredPrint(){
+  const selFloors=Array.from(document.querySelectorAll('.pfCkFl:checked')).map(c=>c.dataset.name);
+  const selTrades=Array.from(document.querySelectorAll('.pfCkTr:checked')).map(c=>c.dataset.id);
+  if(!selFloors.length||!selTrades.length){
+    alert('請至少選擇一個樓層和一個工種');return;
+  }
+  fclose();
+
+  // Find indices to hide
+  const {floors,trades}=R();
+  const flIdx=floors.map((f,i)=>selFloors.includes(f)?-1:i).filter(i=>i>=0);
+  const trIdx=trades.map((t,i)=>selTrades.includes(t.id)?-1:i).filter(i=>i>=0);
+
+  // Mark hidden columns and rows in the table
+  const tbl=document.getElementById('rtb');
+  const headRow=tbl.querySelector('thead tr');
+  const bodyRows=tbl.querySelectorAll('tbody tr');
+
+  // Hide trade rows (each tr in body except last "+工種" row)
+  // The last row is the "add" row, we always hide it for print anyway
+  trades.forEach((tr,i)=>{
+    if(!selTrades.includes(tr.id)){
+      bodyRows[i]&&bodyRows[i].classList.add('hide-print');
+    }
+  });
+  // Hide the "+ 工種" row at the bottom
+  if(bodyRows[trades.length])bodyRows[trades.length].classList.add('hide-print');
+
+  // Hide floor columns: in each row, mark TDs with index = flIdx + 1 (because of leading TD)
+  flIdx.forEach(i=>{
+    // Header
+    const th=headRow.children[i+1];
+    if(th)th.classList.add('hide-print');
+    // Each body row
+    bodyRows.forEach(tr=>{
+      const td=tr.children[i+1];
+      if(td)td.classList.add('hide-print');
+    });
+  });
+  // Hide last column ("+ 樓層")
+  const lastIdx=floors.length+1;
+  if(headRow.children[lastIdx])headRow.children[lastIdx].classList.add('hide-print');
+  bodyRows.forEach(tr=>{
+    if(tr.children[lastIdx])tr.children[lastIdx].classList.add('hide-print');
+  });
+
+  // Trigger print
+  document.body.classList.add('print-renov');
+  setTimeout(()=>{window.print();},80);
+}
+
 function printCell(){
   document.body.classList.add('print-cell');
   setTimeout(()=>{window.print();},60);
 }
 window.addEventListener('afterprint',()=>{
   document.body.classList.remove('print-renov','print-cell');
+  // Clean up filter classes
+  document.querySelectorAll('.hide-print').forEach(el=>el.classList.remove('hide-print'));
 });
 
 // ══════════ INIT ══════════
