@@ -194,6 +194,42 @@ body{background:var(--bg);color:var(--txt);
 .g2{gap:8px;}.g3{gap:12px;}.g4{gap:16px;}
 .mt2{margin-top:8px;}.mt3{margin-top:12px;}.mt4{margin-top:16px;}
 
+/* ── Photos ── */
+.phs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.ph{position:relative;width:64px;height:64px;border-radius:5px;overflow:hidden;
+  background:#000;border:1px solid var(--bg3);cursor:pointer;flex-shrink:0;}
+.ph img{width:100%;height:100%;object-fit:cover;}
+.ph .pdel{position:absolute;top:1px;right:1px;background:rgba(127,29,29,.85);color:#fff;
+  border:none;border-radius:3px;font-size:10px;padding:1px 4px;cursor:pointer;line-height:1;font-family:inherit;}
+.ph.up{display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:10px;
+  background:var(--bg);text-align:center;line-height:1.3;flex-direction:column;gap:2px;}
+.ti .phs{margin-left:21px;}
+.ti .phs .ph{width:48px;height:48px;}
+.phbtn{background:var(--bg3);color:#7dd3fc;border:none;border-radius:4px;
+  padding:3px 7px;font-size:10px;cursor:pointer;font-family:inherit;
+  display:inline-flex;align-items:center;gap:3px;}
+.phbtn:hover{background:#475569;color:#fff;}
+.phbtn.has{background:#075985;color:#7dd3fc;}
+
+/* Lightbox */
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.95);display:none;
+  align-items:center;justify-content:center;z-index:500;padding:20px;cursor:zoom-out;}
+#lb.open{display:flex;}
+#lb img{max-width:96vw;max-height:92vh;object-fit:contain;border-radius:6px;
+  box-shadow:0 10px 40px rgba(0,0,0,.6);}
+#lb .lbinfo{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.7);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;}
+
+/* Print: photos */
+@media print{
+  body.print-renov .ph,body.print-cell .ph{
+    width:120px !important;height:120px !important;
+    border:1px solid #9ca3af !important;}
+  body.print-renov .ph .pdel,body.print-cell .ph .pdel,
+  body.print-renov .ph.up,body.print-cell .ph.up,
+  body.print-renov .phbtn,body.print-cell .phbtn{display:none !important;}
+}
+
 /* ── Print headers (hidden by default) ── */
 .prthdr{display:none;}
 .prtnotes{display:none;}
@@ -253,11 +289,15 @@ body{background:var(--bg);color:var(--txt);
     <div class="dlb">── 工程進度管理系統 ──</div>
     <div id="ddisp" class="dtx"></div>
     <div id="syncBar" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;
-      font-size:11px;padding:5px 12px;border-radius:20px;background:var(--bg2);border:1px solid var(--bg3);">
+      font-size:11px;padding:5px 12px;border-radius:20px;background:var(--bg2);border:1px solid var(--bg3);flex-wrap:wrap;">
       <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;"></span>
       <span id="syncTxt" style="color:var(--mut);">尚未設定雲端同步</span>
       <button class="btn bs bsm" style="padding:2px 8px;font-size:10px;margin-left:4px;"
-        onclick="openSyncSetup()">⚙️ 設定</button>
+        onclick="openSyncSetup()">⚙️ 同步設定</button>
+      <span id="phDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;margin-left:8px;"></span>
+      <span id="phTxt" style="color:var(--mut);">未設定照片儲存</span>
+      <button class="btn bs bsm" style="padding:2px 8px;font-size:10px;"
+        onclick="openCldSetup()">📷 照片設定</button>
     </div>
   </div>
 
@@ -351,6 +391,16 @@ body{background:var(--bg);color:var(--txt);
 
 <!-- ═════════ POPOVER ═════════ -->
 <div id="pop" class="pop"></div>
+
+<!-- ═════════ LIGHTBOX ═════════ -->
+<div id="lb" onclick="closeLightbox()">
+  <img id="lbImg" src="" alt="">
+  <div class="lbinfo" id="lbInfo"></div>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="fiCam" accept="image/*" capture="environment" style="display:none;">
+<input type="file" id="fiUp" accept="image/*" multiple style="display:none;">
 
 <script>
 // ══════════ UTILITIES ══════════
@@ -524,6 +574,203 @@ function mergeFromCloud(cloudState){
   }
 }
 
+// ══════════ PHOTO HANDLING ══════════
+// Photos are stored in Firebase Storage (or as base64 in localStorage if no cloud).
+// Each photo: {id, url, name, uploadedAt, uploadedBy, storagePath?}
+//   - if cloud: url=https://..., storagePath=projects/{id}/photos/{photoId}.jpg
+//   - if local: url=data:image/...
+
+let _photoCallback=null; // function(fileList) called when file input changes
+let _uploadingCount=0;
+
+document.getElementById('fiCam').addEventListener('change',e=>{
+  if(_photoCallback)_photoCallback(e.target.files);
+  e.target.value='';
+});
+document.getElementById('fiUp').addEventListener('change',e=>{
+  if(_photoCallback)_photoCallback(e.target.files);
+  e.target.value='';
+});
+
+function pickPhoto(useCamera,cb){
+  _photoCallback=cb;
+  document.getElementById(useCamera?'fiCam':'fiUp').click();
+}
+
+// Compress image: max 1600px on longest side, JPEG quality 0.82
+function compressImg(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const MAX=1600;
+        let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){
+          if(w>h){h=Math.round(h*MAX/w);w=MAX;}
+          else{w=Math.round(w*MAX/h);h=MAX;}
+        }
+        const cv=document.createElement('canvas');
+        cv.width=w;cv.height=h;
+        const ctx=cv.getContext('2d');
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        cv.toBlob(blob=>{
+          if(!blob){reject(new Error('壓縮失敗'));return;}
+          resolve(blob);
+        },'image/jpeg',0.82);
+      };
+      img.onerror=()=>reject(new Error('圖片解析失敗'));
+      img.src=fr.result;
+    };
+    fr.onerror=()=>reject(new Error('讀取失敗'));
+    fr.readAsDataURL(file);
+  });
+}
+
+function blobToDataURL(blob){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>res(fr.result);
+    fr.onerror=()=>rej(new Error('讀取失敗'));
+    fr.readAsDataURL(blob);
+  });
+}
+
+async function uploadPhoto(file){
+  // Returns photo object: {id, url, name, uploadedAt, uploadedBy, publicId?}
+  if(!file.type.startsWith('image/'))throw new Error('檔案不是圖片');
+  _uploadingCount++;updateUploadStatus();
+  try{
+    const blob=await compressImg(file);
+    const photoId=uid();
+    const photoObj={
+      id:photoId,
+      name:file.name||'photo.jpg',
+      uploadedAt:new Date().toISOString(),
+      uploadedBy:localStorage.getItem('fbUser')||'匿名',
+    };
+    const cldRaw=localStorage.getItem('cldCfg');
+    if(cldRaw){
+      // Upload to Cloudinary
+      const cld=JSON.parse(cldRaw);
+      const fd=new FormData();
+      fd.append('file',blob,photoObj.name);
+      fd.append('upload_preset',cld.uploadPreset);
+      const res=await fetch(`https://api.cloudinary.com/v1_1/${cld.cloudName}/image/upload`,{
+        method:'POST',body:fd
+      });
+      if(!res.ok){
+        const err=await res.text();
+        throw new Error('Cloudinary 上傳失敗：'+err);
+      }
+      const data=await res.json();
+      photoObj.url=data.secure_url;
+      photoObj.publicId=data.public_id;
+      // Build a smaller thumbnail URL for display (Cloudinary auto-resize)
+      photoObj.thumbUrl=data.secure_url.replace('/upload/','/upload/w_300,h_300,c_fill,q_auto/');
+    }else{
+      // Fallback: store as data URL in localStorage (small photos only!)
+      photoObj.url=await blobToDataURL(blob);
+      photoObj.thumbUrl=photoObj.url;
+    }
+    return photoObj;
+  }finally{
+    _uploadingCount--;updateUploadStatus();
+  }
+}
+
+function updateUploadStatus(){
+  if(_uploadingCount>0){
+    setSyncStatus('','📸 上傳照片中（'+_uploadingCount+'）…','#eab308');
+  }
+}
+
+async function deletePhotoStorage(photo){
+  // Cloudinary: signed delete requires backend; with unsigned uploads we can't delete from client.
+  // Photo URL/publicId remains in cloud but is removed from app state.
+  // (Storage is generous; orphan cleanup can be done manually in Cloudinary console if needed.)
+}
+
+// ── Generic photo gallery component ──
+// owner: object that has .photos array (creates if missing)
+// renderFn: callback to re-render parent UI after photo change
+function renderPhotos(owner,opts){
+  opts=opts||{};
+  if(!owner.photos)owner.photos=[];
+  const small=opts.small;
+  const sz=small?'48px':'64px';
+
+  let h=`<div class="phs">`;
+  owner.photos.forEach(p=>{
+    h+=`<div class="ph" style="width:${sz};height:${sz};" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')">
+      <img src="${esc(p.thumbUrl||p.url)}" alt="" loading="lazy">
+      <button class="pdel" onclick="event.stopPropagation();delPhoto('${opts.handle}','${p.id}')" title="刪除">×</button>
+    </div>`;
+  });
+  if(!opts.readonly){
+    h+=`<div class="ph up" style="width:${sz};height:${sz};" onclick="addPhotoMenu(event,'${opts.handle}',true)" title="拍照">📷<span>拍照</span></div>`;
+    h+=`<div class="ph up" style="width:${sz};height:${sz};" onclick="addPhotoMenu(event,'${opts.handle}',false)" title="上傳">📁<span>上傳</span></div>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+
+// Photo handles registry — maps a string id to {get, render}
+const _phHandles={};
+function regPhotoHandle(handle,getOwner,onChange){
+  _phHandles[handle]={getOwner,onChange};
+}
+
+async function addPhotoMenu(e,handle,useCamera){
+  e&&e.stopPropagation();
+  const h=_phHandles[handle];
+  if(!h){alert('Handle 失效');return;}
+  pickPhoto(useCamera,async files=>{
+    if(!files||!files.length)return;
+    for(const f of files){
+      try{
+        const photo=await uploadPhoto(f);
+        const owner=h.getOwner();
+        if(!owner){alert('資料失效');return;}
+        if(!owner.photos)owner.photos=[];
+        owner.photos.push(photo);
+        save();
+        h.onChange();
+      }catch(err){
+        alert('照片上傳失敗：'+err.message);
+        console.error(err);
+      }
+    }
+  });
+}
+
+async function delPhoto(handle,photoId){
+  if(!confirm('確定刪除此照片？'))return;
+  const h=_phHandles[handle];if(!h)return;
+  const owner=h.getOwner();if(!owner||!owner.photos)return;
+  const i=owner.photos.findIndex(p=>p.id===photoId);
+  if(i<0)return;
+  const photo=owner.photos[i];
+  owner.photos.splice(i,1);
+  save();
+  h.onChange();
+  // Async cleanup
+  deletePhotoStorage(photo);
+}
+
+// Lightbox
+function openLightbox(url,info){
+  document.getElementById('lbImg').src=url;
+  document.getElementById('lbInfo').textContent=info||'';
+  document.getElementById('lb').classList.add('open');
+}
+function closeLightbox(){
+  document.getElementById('lb').classList.remove('open');
+  document.getElementById('lbImg').src='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
+
 function save(){
   try{localStorage.setItem('capp4',JSON.stringify(S));}catch(e){}
   // Debounced cloud push (1 second)
@@ -625,6 +872,147 @@ function disableSync(){
   setTimeout(()=>location.reload(),300);
 }
 
+// ══════════ CLOUDINARY SETUP ══════════
+function setPhotoStatus(){
+  const d=document.getElementById('phDot');
+  const t=document.getElementById('phTxt');
+  if(!d||!t)return;
+  const cldRaw=localStorage.getItem('cldCfg');
+  if(cldRaw){
+    try{
+      const c=JSON.parse(cldRaw);
+      d.style.background='#22c55e';
+      t.textContent='📷 照片：'+c.cloudName;
+      t.style.color='#22c55e';
+    }catch{
+      d.style.background='#ef4444';
+      t.textContent='照片設定錯誤';
+    }
+  }else{
+    d.style.background='#64748b';
+    t.textContent='未設定照片儲存（僅本機）';
+    t.style.color='var(--mut)';
+  }
+}
+
+function openCldSetup(){
+  const cldRaw=localStorage.getItem('cldCfg')||'';
+  let cur={};try{cur=JSON.parse(cldRaw);}catch{}
+  const isOn=!!cldRaw;
+
+  const body=`<div class="f fc g3">
+    <div style="font-size:12px;color:var(--mut);line-height:1.65;
+      padding:10px 12px;background:var(--bg);border-radius:6px;border-left:3px solid #38bdf8;">
+      <b style="color:#7dd3fc;">📷 Cloudinary 照片儲存設定</b><br>
+      Cloudinary 是專門儲存圖片的免費服務，<b style="color:#34d399;">5GB 完全免費、不需信用卡</b>，
+      自動產生縮圖讓手機載入更快。
+      <br><br>
+      <b style="color:#fbbf24;">若你還沒有 Cloudinary 帳號</b>，按下方「📖 查看建立教學」，5 分鐘可完成。
+    </div>
+
+    <label class="lbl">
+      Cloud Name <span style="color:var(--dim);font-size:10px;">（Cloudinary Dashboard 上方顯示的名稱）</span>
+      <input id="cldName" class="inp" value="${esc(cur.cloudName||'')}" placeholder="例：dabcdefgh">
+    </label>
+
+    <label class="lbl">
+      Upload Preset <span style="color:var(--dim);font-size:10px;">（你建立的「未簽名」上傳預設名稱）</span>
+      <input id="cldPreset" class="inp" value="${esc(cur.uploadPreset||'')}" placeholder="例：construction_unsigned">
+    </label>
+
+    <div class="f g2 fw" style="margin-top:4px;">
+      <button class="btn bs" style="flex:1;padding:10px;" onclick="showCldGuide()">📖 查看建立教學</button>
+      ${isOn?`<button class="btn bs" style="flex:1;padding:10px;background:#7f1d1d;color:#fff;" onclick="disableCld()">🔌 停用</button>`:''}
+      <button class="btn bp" style="flex:2;padding:10px;" onclick="saveCldSetup()">儲存並啟用</button>
+    </div>
+  </div>`;
+
+  openModal('📷 Cloudinary 照片設定',body,true);
+}
+
+function saveCldSetup(){
+  const cloudName=document.getElementById('cldName').value.trim();
+  const uploadPreset=document.getElementById('cldPreset').value.trim();
+  if(!cloudName||!uploadPreset){alert('請填寫 Cloud Name 和 Upload Preset');return;}
+  localStorage.setItem('cldCfg',JSON.stringify({cloudName,uploadPreset}));
+  fclose();
+  alert('✓ 已儲存照片設定！現在可以拍照／上傳照片了。');
+  setPhotoStatus();
+}
+
+function disableCld(){
+  if(!confirm('確定停用 Cloudinary？已上傳的照片仍可顯示，但無法新增。'))return;
+  localStorage.removeItem('cldCfg');
+  fclose();setPhotoStatus();
+}
+
+function showCldGuide(){
+  const body=`<div style="font-size:13px;line-height:1.75;color:var(--txt);">
+    <h3 style="color:#7dd3fc;margin-bottom:10px;">📖 建立 Cloudinary 帳號（5 分鐘）</h3>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">① 註冊 Cloudinary</b>
+      <ol style="margin:6px 0 0 20px;color:var(--mut);">
+        <li>到 <a href="https://cloudinary.com/users/register_free" target="_blank" style="color:#7dd3fc;">cloudinary.com/users/register_free</a></li>
+        <li>用 Email 或 Google 帳號註冊（<b style="color:#34d399;">不用信用卡</b>）</li>
+        <li>第一次登入會問用途，隨便選都可以</li>
+      </ol>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">② 找到 Cloud Name</b>
+      <div style="margin-top:6px;color:var(--mut);">
+        登入後在 Dashboard（首頁）會看到 <b style="color:#7dd3fc;">Product Environment</b> 區塊，
+        裡面 <b style="color:#fff;">Cloud Name</b> 就是要的（通常是隨機字串如 <code style="color:#7dd3fc;">dxyz123ab</code>），
+        點旁邊的複製圖示。
+      </div>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;border-left:3px solid #fbbf24;">
+      <b style="color:#fbbf24;">③ 建立 Upload Preset（重要！）</b>
+      <ol style="margin:6px 0 0 20px;color:var(--mut);">
+        <li>左側選單點齒輪 ⚙️ <b style="color:#fff;">Settings</b></li>
+        <li>上方分頁切到 <b style="color:#fff;">Upload</b></li>
+        <li>往下捲找到 <b style="color:#fff;">Upload presets</b> 區塊</li>
+        <li>點 <b style="color:#fff;">Add upload preset</b></li>
+        <li>把 <b style="color:#fff;">Signing Mode</b> 改成 <b style="color:#34d399;">Unsigned</b>（這個關鍵！）</li>
+        <li>記下上方 <b style="color:#fff;">Upload preset name</b>（自動產生，可改成 <code style="color:#7dd3fc;">construction</code>）</li>
+        <li>下方 <b style="color:#fff;">Folder</b> 可填 <code style="color:#7dd3fc;">construction</code> 把照片歸類</li>
+        <li>右上角點 <b style="color:#fff;">Save</b></li>
+      </ol>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">④ 回本程式設定</b>
+      <ol style="margin:6px 0 0 20px;color:var(--mut);">
+        <li>把 <b style="color:#fff;">Cloud Name</b> 貼到上一個視窗的「Cloud Name」欄</li>
+        <li>把 <b style="color:#fff;">Upload preset name</b> 貼到「Upload Preset」欄</li>
+        <li>按「儲存並啟用」</li>
+      </ol>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">⑤ 團隊成員共用</b>
+      <div style="margin-top:6px;color:var(--mut);">
+        把同一組 Cloud Name 和 Upload Preset 傳給團隊（LINE、Email 都可），
+        每個人填上後就會共用同一個照片儲存空間。
+      </div>
+    </div>
+
+    <div style="background:#1c1917;padding:10px 14px;border-radius:6px;margin-bottom:10px;border-left:3px solid #fbbf24;">
+      <div style="font-size:11px;color:#fbbf24;">
+        ⚠️ <b>安全說明：</b>因 Upload Preset 是 unsigned，理論上知道你的 Cloud Name + Preset 的人都可以上傳照片到你的帳號。
+        Cloudinary 免費額度 5 GB 很足夠，但建議不要把設定公開（例如不要傳到 GitHub），只私訊給團隊成員即可。
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn bp" style="padding:10px 28px;" onclick="openCldSetup()">← 返回設定</button>
+    </div>
+  </div>`;
+  openModal('📖 Cloudinary 建立教學',body,true);
+}
+
 function showFbGuide(){
   const body=`<div style="font-size:13px;line-height:1.75;color:var(--txt);">
     <h3 style="color:#60a5fa;margin-bottom:10px;">📖 建立 Firebase 專案步驟</h3>
@@ -648,7 +1036,7 @@ function showFbGuide(){
     </div>
 
     <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
-      <b style="color:#fbbf24;">③ 設定安全規則（重要）</b>
+      <b style="color:#fbbf24;">③ 設定 Firestore 安全規則（重要）</b>
       <div style="margin-top:6px;color:var(--mut);">
         到「Firestore Database → 規則」分頁，把規則改成：
         <pre style="background:#000;color:#7dd3fc;padding:8px 10px;border-radius:4px;margin-top:6px;font-size:11px;overflow-x:auto;white-space:pre;">rules_version = '2';
@@ -679,6 +1067,8 @@ service cloud.firestore {
       <div style="margin-top:6px;color:var(--mut);">
         把同一組設定 JSON 傳給團隊成員（LINE、Email 均可），
         每個人在自己的網頁裡貼上，大家就會看到同一份資料並即時同步。
+        <br><br>
+        💡 <b style="color:#7dd3fc;">照片功能</b>另外設定（按首頁「📷 照片設定」），用免費的 Cloudinary。
       </div>
     </div>
 
@@ -837,16 +1227,24 @@ function renderTodos(){
       const dl=getDly(t);
       const cl=t.done?'#475569':dl>=2?'#ef4444':dl===1?'#eab308':'#e2e8f0';
       const dk=t.done?'line-through':'none';
+      const np=(t.photos||[]).length;
+      const handle='todo_'+t.id;
+      regPhotoHandle(handle,
+        ()=>S.todos.find(x=>x.id===t.id),
+        ()=>renderTodos()
+      );
       return`<div class="ti">
         <input type="checkbox" class="ck"${t.done?' checked':''} onchange="togTodo('${t.id}')">
         <span class="tx" style="color:${cl};text-decoration:${dk};">${esc(t.text)}${
           dl>0&&!t.done?`<span style="font-size:9px;opacity:.65;"> (${dl}天前)</span>`:''
         }${t.assignee?`<span class="asg">@${esc(t.assignee)}</span>`:''}</span>
         <span class="acg">
+          <button class="phbtn ${np?'has':''}" onclick="addPhotoMenu(event,'${handle}',true)" title="拍照">📷${np?np:''}</button>
+          <button class="phbtn" onclick="addPhotoMenu(event,'${handle}',false)" title="上傳照片">📁</button>
           <button class="ac" onclick="editTodo('${t.id}')" title="編輯">✎</button>
           <button class="ac" onclick="delTodo('${t.id}')" title="刪除">×</button>
         </span>
-      </div>`;
+      </div>${(t.photos&&t.photos.length)?`<div class="phs" style="margin-left:21px;margin-bottom:6px;">${t.photos.map(p=>`<div class="ph" style="width:48px;height:48px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}`;
     }).join('')}</td>`;
   }).join('');
 }
@@ -855,7 +1253,7 @@ function addTodo(){
   const dt=document.getElementById('tdt').value||today();
   const asg=document.getElementById('tasg').value.trim();
   if(!txt)return;
-  S.todos.push({id:uid(),text:txt,done:false,date:dt,originalDate:dt,assignee:asg});
+  S.todos.push({id:uid(),text:txt,done:false,date:dt,originalDate:dt,assignee:asg,photos:[]});
   save();
   document.getElementById('ttx').value='';
   document.getElementById('tasg').value='';
@@ -864,9 +1262,11 @@ function addTodo(){
 function togTodo(id){
   const t=S.todos.find(x=>x.id===id);if(t){t.done=!t.done;save();renderTodos();}
 }
-function delTodo(id){
-  if(!confirm('確定刪除此待辦事項？'))return;
+async function delTodo(id){
+  if(!confirm('確定刪除此待辦事項及所有照片？'))return;
+  const t=S.todos.find(x=>x.id===id);
   S.todos=S.todos.filter(x=>x.id!==id);save();renderTodos();
+  if(t&&t.photos)t.photos.forEach(p=>deletePhotoStorage(p));
 }
 function editTodo(id){
   const t=S.todos.find(x=>x.id===id);if(!t)return;
@@ -1476,13 +1876,24 @@ function renderNotesView(){
     h+=`<div style="text-align:center;color:var(--dim);padding:30px 0;font-size:13px;">
       尚無備註。下方新增記錄需要強調的區域或問題 👇</div>`;
   }else{
-    h+=list.map(n=>`<div class="note">
-      <div class="nmt">
-        <span><b style="color:#a78bfa;">${esc(n.author||'匿名')}</b> · ${fmtDT(n.createdAt)}</span>
-        <button class="bd" onclick="delNote('${esc(n.id)}')">刪除</button>
-      </div>
-      <div class="ntx">${esc(n.text)}</div>
-    </div>`).join('');
+    list.forEach(n=>{
+      const handle='note_'+n.id;
+      regPhotoHandle(handle,
+        ()=>{
+          const c=getCell(_fl,_tid);
+          return c.notes?.[_unit]?.[_sub]?.find(x=>x.id===n.id);
+        },
+        ()=>renderNotesView()
+      );
+      h+=`<div class="note">
+        <div class="nmt">
+          <span><b style="color:#a78bfa;">${esc(n.author||'匿名')}</b> · ${fmtDT(n.createdAt)}</span>
+          <button class="bd" onclick="delNote('${esc(n.id)}')">刪除</button>
+        </div>
+        <div class="ntx">${esc(n.text)}</div>
+        ${renderPhotos(n,{handle})}
+      </div>`;
+    });
   }
 
   h+=`<div class="mt4" style="border-top:1px solid var(--bg3);padding-top:14px;">
@@ -1491,7 +1902,10 @@ function renderNotesView(){
       <textarea id="ntx" class="inp" rows="3"
         placeholder="例：東側牆面有裂縫需補強、窗框收邊不平整..."
         style="resize:vertical;min-height:72px;"></textarea>
-      <button class="btn bp" style="padding:10px;align-self:flex-start;" onclick="addNote()">＋ 新增備註</button>
+      <div class="f g2 fw">
+        <button class="btn bp" style="padding:10px 16px;" onclick="addNote()">＋ 新增備註</button>
+        <span style="font-size:11px;color:var(--dim);align-self:center;">💡 新增後即可在備註下方加照片</span>
+      </div>
     </div>
   </div>`;
 
@@ -1505,16 +1919,21 @@ function addNote(){
   if(!cell.notes[_unit])cell.notes[_unit]={};
   if(!cell.notes[_unit][_sub])cell.notes[_unit][_sub]=[];
   cell.notes[_unit][_sub].push({
-    id:uid(),author:au||'匿名',text:tx,createdAt:new Date().toISOString()
+    id:uid(),author:au||'匿名',text:tx,createdAt:new Date().toISOString(),photos:[]
   });
   save();renderNotesView();
 }
-function delNote(nid){
-  if(!confirm('確定刪除此備註？'))return;
+async function delNote(nid){
+  if(!confirm('確定刪除此備註及所有照片？'))return;
   const cell=getCell(_fl,_tid);
   const arr=cell.notes?.[_unit]?.[_sub]||[];
   const i=arr.findIndex(n=>n.id===nid);
-  if(i>=0){arr.splice(i,1);save();renderNotesView();}
+  if(i>=0){
+    const note=arr[i];
+    arr.splice(i,1);save();renderNotesView();
+    // Cleanup photos
+    if(note.photos)note.photos.forEach(p=>deletePhotoStorage(p));
+  }
 }
 
 // ══════════ STRUCTURE ══════════
@@ -1673,7 +2092,7 @@ window.addEventListener('afterprint',()=>{
 load();
 renderHome();
 // Init Firebase sync (if configured)
-setTimeout(initFirebase,200);
+setTimeout(()=>{initFirebase();setPhotoStatus();},200);
 </script>
 </body>
 </html>
