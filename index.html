@@ -9,10 +9,10 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --bg:#0f172a;--bg2:#1e293b;--bg3:#334155;
+  --bg:#f8fafc;--bg2:#ffffff;--bg3:#cbd5e1;
   --blu:#2563eb;--tel:#0f766e;--pur:#7e22ce;--amb:#b45309;
-  --txt:#e2e8f0;--mut:#94a3b8;--dim:#64748b;
-  --yel:#eab308;--red:#ef4444;--grn:#15803d;
+  --txt:#0f172a;--mut:#475569;--dim:#94a3b8;
+  --yel:#ca8a04;--red:#dc2626;--grn:#15803d;
 }
 body{background:var(--bg);color:var(--txt);
   font-family:'Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif;min-height:100vh;}
@@ -42,35 +42,35 @@ body{background:var(--bg);color:var(--txt);
 .phdr{padding:10px 16px;display:flex;align-items:center;gap:10px;
   background:var(--bg2);border-bottom:1px solid var(--bg3);
   flex-shrink:0;flex-wrap:wrap;}
-.phdr h1{margin:0;font-size:20px;font-weight:700;color:#fff;}
+.phdr h1{margin:0;font-size:20px;font-weight:700;color:var(--txt);}
 
-#ov{position:fixed;inset:0;background:rgba(0,0,0,.82);
+#ov{position:fixed;inset:0;background:rgba(15,23,42,.6);
   display:none;align-items:center;justify-content:center;z-index:300;padding:16px;}
 #ov.open{display:flex;}
 #mb{background:var(--bg2);border-radius:18px;padding:24px;width:100%;
   max-width:490px;max-height:92vh;overflow-y:auto;
-  box-shadow:0 30px 60px rgba(0,0,0,.7);}
+  box-shadow:0 30px 60px rgba(15,23,42,.25);border:1px solid var(--bg3);}
 #mb.wide{max-width:min(94vw,1080px);}
 .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:8px;}
-.mh h2{margin:0;font-size:17px;color:#fff;font-weight:700;flex:1;}
+.mh h2{margin:0;font-size:17px;color:var(--txt);font-weight:700;flex:1;}
 .mcl{background:none;border:none;color:var(--dim);font-size:30px;
   cursor:pointer;line-height:1;padding:0;}
-.mcl:hover{color:#fff;}
+.mcl:hover{color:var(--txt);}
 
 /* ── Popover Menu ── */
-.dotbtn{background:var(--bg3);color:#93c5fd;border:none;border-radius:4px;
+.dotbtn{background:#e2e8f0;color:#1e40af;border:none;border-radius:4px;
   padding:2px 6px;font-size:12px;cursor:pointer;font-family:inherit;line-height:1;}
-.dotbtn:hover{background:#475569;color:#fff;}
+.dotbtn:hover{background:#cbd5e1;color:#1e3a8a;}
 .pop{position:fixed;background:var(--bg2);border:1px solid var(--bg3);
-  border-radius:8px;box-shadow:0 12px 30px rgba(0,0,0,.6);padding:4px;
+  border-radius:8px;box-shadow:0 12px 30px rgba(15,23,42,.25);padding:4px;
   display:none;z-index:350;min-width:130px;}
 .pop.open{display:block;}
 .pop button{display:block;width:100%;background:none;border:none;color:var(--txt);
   font-size:13px;padding:8px 12px;text-align:left;cursor:pointer;border-radius:4px;
   font-family:inherit;transition:background .12s;}
-.pop button:hover{background:var(--bg3);}
-.pop button.dgr{color:#fca5a5;}
-.pop button.dgr:hover{background:#7f1d1d;color:#fff;}
+.pop button:hover{background:#f1f5f9;}
+.pop button.dgr{color:#dc2626;}
+.pop button.dgr:hover{background:#fee2e2;color:#991b1b;}
 .pop hr{border:none;border-top:1px solid var(--bg3);margin:4px 0;}
 
 /* ── Drag feedback ── */
@@ -82,7 +82,7 @@ body{background:var(--bg);color:var(--txt);
 .dh{text-align:center;margin-bottom:36px;padding-top:20px;}
 .dlb{font-size:10px;color:var(--dim);letter-spacing:6px;margin-bottom:10px;
   text-transform:uppercase;font-weight:700;}
-.dtx{font-size:26px;font-weight:700;color:#60a5fa;letter-spacing:1px;}
+.dtx{font-size:26px;font-weight:700;color:#1e40af;letter-spacing:1px;}
 
 .tsec{background:var(--bg2);border-radius:14px;padding:16px;
   margin-bottom:20px;border:1px solid var(--bg3);}
@@ -91,22 +91,28 @@ body{background:var(--bg);color:var(--txt);
 .twp{overflow-x:auto;}
 .ttb{border-collapse:collapse;width:100%;min-width:920px;}
 .ttb th{padding:8px 6px;text-align:center;font-size:11px;font-weight:700;
-  border:1px solid var(--bg3);background:var(--bg2);color:var(--dim);min-width:150px;}
-.ttb th.tc{background:#1e3a8a;color:#93c5fd;}
+  border:1px solid var(--bg3);background:var(--bg2);color:var(--mut);min-width:150px;}
+.ttb th.tc{background:#dbeafe;color:#1e40af;}
 .ttb td{border:1px solid var(--bg3);vertical-align:top;
-  background:var(--bg);padding:6px;min-height:96px;}
-.ttb td.tc{background:#172554;}
+  background:#fff;padding:6px;min-height:96px;}
+.ttb td.tc{background:#eff6ff;}
 
-.ti{display:flex;align-items:flex-start;gap:5px;margin-bottom:6px;
+.ti{display:flex;align-items:center;gap:6px;margin-bottom:6px;
   font-size:11px;line-height:1.55;}
-.ti .ck{flex-shrink:0;margin-top:3px;accent-color:#3b82f6;cursor:pointer;}
-.ti .tx{flex:1;min-width:0;word-break:break-all;padding-top:1px;}
-.ti .asg{display:inline-block;font-size:9px;color:#a78bfa;background:#2e1065;
+.ti .ck{flex-shrink:0;accent-color:#3b82f6;cursor:pointer;width:14px;height:14px;}
+.ti .tx{flex:1;min-width:0;word-break:break-all;}
+.ti .asg{display:inline-block;font-size:9px;color:#6d28d9;background:#ede9fe;
   padding:1px 5px;border-radius:3px;margin-left:3px;white-space:nowrap;}
-.ti .acg{display:flex;gap:1px;flex-shrink:0;align-items:flex-start;padding-top:1px;}
-.ti .ac{background:none;border:none;color:var(--dim);cursor:pointer;
-  font-size:13px;padding:0 3px;line-height:1.4;}
-.ti .ac:hover{color:#fff;}
+.ti .acg{display:inline-flex;gap:2px;flex-shrink:0;align-items:center;}
+.ti .ac{background:none;border:none;color:#94a3b8;cursor:pointer;
+  font-size:13px;padding:2px 4px;line-height:1;border-radius:3px;
+  width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
+  transition:background .12s,color .12s;}
+.ti .ac:hover{color:var(--txt);background:#f1f5f9;}
+.ti .ac.dgr:hover{color:#dc2626;background:#fee2e2;}
+.ti .ac.cam:hover{color:#0891b2;background:#cffafe;}
+.ti .ac.cam.has{color:#0891b2;background:#ecfeff;font-weight:700;}
+.ti .ac .num{font-size:9px;margin-left:1px;}
 
 .tadd{display:flex;gap:8px;margin-bottom:46px;flex-wrap:wrap;align-items:center;}
 .nbts{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;}
@@ -137,7 +143,7 @@ body{background:var(--bg);color:var(--txt);
 .hdrow.lf{justify-content:flex-start;}
 .pc{text-align:center;cursor:pointer;transition:filter .18s;}
 .pc:hover{filter:brightness(1.45);}
-.pc .pcv{padding:14px 4px;color:#fff;font-weight:700;font-size:14px;}
+.pc .pcv{padding:14px 4px;font-weight:700;font-size:14px;}
 
 /* ── Structure ── */
 .sbdy{overflow:auto;flex:1;position:relative;}
@@ -145,17 +151,17 @@ body{background:var(--bg);color:var(--txt);
 .gtb th{border:1px solid var(--bg3);padding:6px 8px;font-size:11px;
   color:var(--txt);text-align:center;vertical-align:top;position:sticky;top:0;z-index:20;}
 .gtb th.gcn{position:sticky;top:0;left:0;z-index:30;background:var(--bg2);min-width:94px;}
-.gtb th.gih{background:#1e3a8a;min-width:96px;}
-.gtb th.gfh{background:#0c4a6e;min-width:96px;}
-.gtb td{border:1px solid #1e293b;height:22px;}
-.gtb td.gdc{position:sticky;left:0;z-index:10;background:var(--bg);
-  border:1px solid var(--bg3);padding:1px 7px;font-size:10px;color:var(--dim);
+.gtb th.gih{background:#dbeafe;color:#1e3a8a;min-width:96px;}
+.gtb th.gfh{background:#cffafe;color:#0e7490;min-width:96px;}
+.gtb td{border:1px solid #e2e8f0;height:22px;}
+.gtb td.gdc{position:sticky;left:0;z-index:10;background:#fff;
+  border:1px solid var(--bg3);padding:1px 7px;font-size:10px;color:var(--mut);
   white-space:nowrap;min-width:94px;}
-.gtb tr.tdr td{background:#1e3a6e !important;}
-.gtb tr.tdr td.gdc{background:#1e3a6e !important;color:#60a5fa;}
-.gtb tr.wkr{background:#0d1525;}
-.gtb tr.wkr td.gdc{background:#0d1525;color:#374151;}
-.mrow td{background:#1e293b;border-bottom:1px solid var(--bg3);
+.gtb tr.tdr td{background:#fef3c7 !important;}
+.gtb tr.tdr td.gdc{background:#fef3c7 !important;color:#92400e;font-weight:700;}
+.gtb tr.wkr{background:#f1f5f9;}
+.gtb tr.wkr td.gdc{background:#f1f5f9;color:#94a3b8;}
+.mrow td{background:#f1f5f9;border-bottom:1px solid var(--bg3);
   padding:4px 10px;font-size:11px;font-weight:700;color:#60a5fa;letter-spacing:3px;}
 .bd{background:#7f1d1d;color:#fff;padding:2px 6px;font-size:9px;border-radius:3px;
   border:none;cursor:pointer;font-family:inherit;}
@@ -1242,10 +1248,10 @@ function renderTodos(){
           dl>0&&!t.done?`<span style="font-size:9px;opacity:.65;"> (${dl}天前)</span>`:''
         }${t.assignee?`<span class="asg">@${esc(t.assignee)}</span>`:''}</span>
         <span class="acg">
-          <button class="phbtn ${np?'has':''}" onclick="addPhotoMenu(event,'${handle}',true)" title="拍照">📷${np?np:''}</button>
-          <button class="phbtn" onclick="addPhotoMenu(event,'${handle}',false)" title="上傳照片">📁</button>
+          <button class="ac cam ${np?'has':''}" onclick="addPhotoMenu(event,'${handle}',true)" title="拍照">📷${np?`<span class="num">${np}</span>`:''}</button>
+          <button class="ac" onclick="addPhotoMenu(event,'${handle}',false)" title="上傳照片">📁</button>
           <button class="ac" onclick="editTodo('${t.id}')" title="編輯">✎</button>
-          <button class="ac" onclick="delTodo('${t.id}')" title="刪除">×</button>
+          <button class="ac dgr" onclick="delTodo('${t.id}')" title="刪除">✕</button>
         </span>
       </div>${(t.photos&&t.photos.length)?`<div class="phs" style="margin-left:21px;margin-bottom:6px;">${t.photos.map(p=>`<div class="ph" style="width:48px;height:48px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}`;
     }).join('')}</td>`;
@@ -1299,8 +1305,10 @@ document.getElementById('ttx').addEventListener('keydown',e=>{if(e.key==='Enter'
 document.getElementById('tasg').addEventListener('keydown',e=>{if(e.key==='Enter')addTodo();});
 
 // ══════════ RENOVATION ══════════
-const PC=[[0,'#0f172a'],[1,'#1e3a5f'],[25,'#1e40af'],[50,'#1d4ed8'],[75,'#3b82f6'],[100,'#15803d']];
+const PC=[[0,'#f1f5f9'],[1,'#dbeafe'],[25,'#93c5fd'],[50,'#60a5fa'],[75,'#3b82f6'],[100,'#16a34a']];
+const PCTXT=[[0,'#475569'],[1,'#1e40af'],[25,'#1e3a8a'],[50,'#fff'],[75,'#fff'],[100,'#fff']];
 const pBg=p=>{for(let i=PC.length-1;i>=0;i--)if(p>=PC[i][0])return PC[i][1];return PC[0][1];};
+const pTxt=p=>{for(let i=PCTXT.length-1;i>=0;i--)if(p>=PCTXT[i][0])return PCTXT[i][1];return PCTXT[0][1];};
 const R=()=>S['renov_'+_renovKey];
 
 // Floor-specific unit helpers
@@ -1315,14 +1323,16 @@ const getEditableUnits=()=>{
 
 function getCell(fl,tid){
   const c=R().cells[`${fl}_${tid}`];
-  if(!c)return{units:{},notes:{}};
+  if(!c)return{units:{},notes:{},photos:{}};
   if(!c.notes)c.notes={};
+  if(!c.photos)c.photos={};
   return c;
 }
 function ensureCell(fl,tid){
   const k=`${fl}_${tid}`;
-  if(!R().cells[k])R().cells[k]={units:{},notes:{}};
+  if(!R().cells[k])R().cells[k]={units:{},notes:{},photos:{}};
   if(!R().cells[k].notes)R().cells[k].notes={};
+  if(!R().cells[k].photos)R().cells[k].photos={};
   return R().cells[k];
 }
 function calcPct(cu,subs,units){
@@ -1376,7 +1386,7 @@ function renderRenov(){
       </div></td>`;
     floors.forEach(fl=>{
       const p=getCPct(fl,tr.id);
-      h+=`<td class="pc" style="background:${pBg(p)};"
+      h+=`<td class="pc" style="background:${pBg(p)};color:${pTxt(p)};"
         onclick="openCell('${esc(fl)}','${esc(tr.id)}')"
         data-fl="${esc(fl)}" data-tid="${esc(tr.id)}">
         <div class="pcv">${p>0?p+'%':'—'}</div></td>`;
@@ -1717,10 +1727,12 @@ function renderCellMatrix(){
     units.forEach((u,ui)=>{
       const v=cell.units?.[u]?.[s]??0;
       const nc=(cell.notes?.[u]?.[s]||[]).length;
+      const np=(cell.photos?.[u]?.[s]||[]).length;
       h+=`<td><div class="cwrap">
         <input type="number" class="pi" min="0" max="100" value="${v}"
           data-si="${si}" data-ui="${ui}" oninput="updCell(this)">
         <button class="nbtc ${nc?'has':''}" onclick="openNotes('${esc(u)}','${esc(s)}')" title="備註">📝${nc||''}</button>
+        <button class="nbtc ph ${np?'has':''}" onclick="openCellPhotos('${esc(u)}','${esc(s)}')" title="照片">📷${np||''}</button>
       </div></td>`;
     });
     const sa=calcRowAvg(cell,s,units);
@@ -1800,7 +1812,7 @@ function updCell(inp){
   if(uaEl)uaEl.textContent=calcColAvg(cell,u,tr.subs)+'%';
   if(totEl)totEl.textContent=calcPct(cell.units,tr.subs,units)+'%';
   const gc=document.querySelector(`[data-fl="${_fl}"][data-tid="${_tid}"]`);
-  if(gc){const p=getCPct(_fl,_tid);gc.style.background=pBg(p);gc.querySelector('.pcv').textContent=p>0?p+'%':'—';}
+  if(gc){const p=getCPct(_fl,_tid);gc.style.background=pBg(p);gc.style.color=pTxt(p);gc.querySelector('.pcv').textContent=p>0?p+'%':'—';}
 }
 
 function openSbMenu(e,i){
@@ -1860,6 +1872,67 @@ function delUnit(i){
 
 // ══════════ NOTES ══════════
 function openNotes(unit,sub){_unit=unit;_sub=sub;renderNotesView();}
+
+function openCellPhotos(unit,sub){
+  _unit=unit;_sub=sub;renderCellPhotosView();
+}
+function renderCellPhotosView(){
+  const cell=ensureCell(_fl,_tid);
+  if(!cell.photos[_unit])cell.photos[_unit]={};
+  if(!cell.photos[_unit][_sub])cell.photos[_unit][_sub]=[];
+  const photos=cell.photos[_unit][_sub];
+  const tr=R().trades.find(t=>t.id===_tid);
+  const trName=tr?tr.name:'';
+
+  const handle='cellph_'+_fl+'_'+_tid+'_'+_unit+'_'+_sub;
+  regPhotoHandle(handle,
+    ()=>{
+      const c=ensureCell(_fl,_tid);
+      if(!c.photos[_unit])c.photos[_unit]={};
+      if(!c.photos[_unit][_sub])c.photos[_unit][_sub]=[];
+      // Return wrapper exposing `.photos` array for renderPhotos
+      return {get photos(){return c.photos[_unit][_sub];},set photos(v){c.photos[_unit][_sub]=v;}};
+    },
+    ()=>renderCellPhotosView()
+  );
+
+  let h=`<div class="f ai g2 mt2" style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bg3);">
+    <button class="btn bs bsm" onclick="renderCellMatrix()">← 回矩陣</button>
+    <div style="font-size:13px;color:var(--mut);">
+      <b style="color:#b45309;">${esc(_fl)} · ${esc(trName)}</b> / 
+      <span style="color:#1e40af;">${esc(_unit)}</span> × 
+      <span style="color:#15803d;">${esc(_sub)}</span>
+    </div>
+  </div>
+
+  <div style="font-size:12px;color:var(--mut);margin-bottom:10px;padding:8px 12px;background:var(--bg);border-radius:6px;border-left:3px solid #0891b2;">
+    📷 此區域的照片（${photos.length} 張）。點縮圖可放大檢視。
+  </div>`;
+
+  if(photos.length===0){
+    h+=`<div style="text-align:center;color:var(--dim);padding:24px 0;font-size:13px;">
+      尚無照片。點下方按鈕拍照或上傳 👇</div>`;
+  }else{
+    // Render photos in a bigger gallery
+    h+=`<div class="phs" style="gap:10px;margin-bottom:14px;">`;
+    photos.forEach(p=>{
+      h+=`<div class="ph" style="width:120px;height:120px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')">
+        <img src="${esc(p.thumbUrl||p.url)}" alt="" loading="lazy">
+        <button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+
+  h+=`<div class="f g2 mt3 fw" style="border-top:1px solid var(--bg3);padding-top:14px;">
+    <button class="btn bp" style="padding:10px 16px;" onclick="addPhotoMenu(event,'${handle}',true)">📷 拍照</button>
+    <button class="btn bs" style="padding:10px 16px;" onclick="addPhotoMenu(event,'${handle}',false)">📁 上傳</button>
+    <span style="font-size:11px;color:var(--dim);align-self:center;margin-left:6px;">支援多選</span>
+  </div>`;
+
+  openModal(`📷 照片：${esc(_fl)} / ${esc(_unit)} × ${esc(_sub)}`,h,true);
+}
+
 function renderNotesView(){
   const cell=getCell(_fl,_tid);
   const list=cell.notes?.[_unit]?.[_sub]||[];
