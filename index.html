@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>工程進度管理系統 v3</title>
+<title>工程進度管理系統 v6</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -250,6 +252,13 @@ body{background:var(--bg);color:var(--txt);
   <div class="dh">
     <div class="dlb">── 工程進度管理系統 ──</div>
     <div id="ddisp" class="dtx"></div>
+    <div id="syncBar" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;
+      font-size:11px;padding:5px 12px;border-radius:20px;background:var(--bg2);border:1px solid var(--bg3);">
+      <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;"></span>
+      <span id="syncTxt" style="color:var(--mut);">尚未設定雲端同步</span>
+      <button class="btn bs bsm" style="padding:2px 8px;font-size:10px;margin-left:4px;"
+        onclick="openSyncSetup()">⚙️ 設定</button>
+    </div>
   </div>
 
   <div class="tsec">
@@ -425,7 +434,105 @@ const DEF={
 let S=JSON.parse(JSON.stringify(DEF));
 let _renovKey='indoor';
 
-function save(){try{localStorage.setItem('capp4',JSON.stringify(S));}catch(e){}}
+// ══════════ FIREBASE CLOUD SYNC ══════════
+let _fb=null;        // firestore instance
+let _fbUnsub=null;   // unsubscribe for real-time listener
+let _fbWriting=false;// prevent write→read loop
+let _fbLastWrite=0;  // timestamp
+let _saveTimer=null; // debounce timer
+let _syncEnabled=false;
+
+function setSyncStatus(dot,txt,col){
+  const d=document.getElementById('syncDot');
+  const t=document.getElementById('syncTxt');
+  if(d)d.style.background=col||'#64748b';
+  if(t){t.textContent=txt;t.style.color=col||'var(--mut)';}
+}
+
+async function initFirebase(){
+  const cfgRaw=localStorage.getItem('fbCfg');
+  if(!cfgRaw){setSyncStatus('','雲端同步未啟用（僅存於本機）','#64748b');return;}
+  try{
+    const cfg=JSON.parse(cfgRaw);
+    if(!window.firebase){setSyncStatus('','Firebase 載入失敗','#ef4444');return;}
+    if(!firebase.apps.length){
+      firebase.initializeApp(cfg.fb);
+    }
+    _fb=firebase.firestore();
+    _syncEnabled=true;
+    const docRef=_fb.collection('projects').doc(cfg.projectId||'main');
+    setSyncStatus('','☁️ 連接中…','#eab308');
+
+    // First-time fetch + realtime subscribe
+    _fbUnsub=docRef.onSnapshot(snap=>{
+      // Ignore our own writes for ~1.5s to avoid loop
+      if(Date.now()-_fbLastWrite<1500)return;
+      if(!snap.exists){
+        // First push from this device
+        pushToCloud(docRef);
+        return;
+      }
+      const data=snap.data();
+      if(data&&data.state){
+        mergeFromCloud(data.state);
+        setSyncStatus('','☁️ 已同步 · '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),'#22c55e');
+      }
+    },err=>{
+      console.error('Firestore error:',err);
+      setSyncStatus('','⚠️ 同步錯誤：'+(err.code||err.message),'#ef4444');
+    });
+  }catch(e){
+    console.error(e);
+    setSyncStatus('','⚠️ 設定錯誤','#ef4444');
+  }
+}
+
+async function pushToCloud(docRef){
+  if(!_fb)return;
+  try{
+    _fbLastWrite=Date.now();
+    const ref=docRef||_fb.collection('projects').doc((JSON.parse(localStorage.getItem('fbCfg')||'{}').projectId)||'main');
+    await ref.set({
+      state:S,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy:(localStorage.getItem('fbUser')||'匿名'),
+    });
+    setSyncStatus('','☁️ 已同步 · '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),'#22c55e');
+  }catch(e){
+    console.error(e);
+    setSyncStatus('','⚠️ 上傳失敗','#ef4444');
+  }
+}
+
+function mergeFromCloud(cloudState){
+  // Cloud is authoritative. Replace local state.
+  S=cloudState;
+  // Ensure shape
+  if(!S.renov_indoor)S.renov_indoor=JSON.parse(JSON.stringify(DEF.renov_indoor));
+  if(!S.renov_outdoor)S.renov_outdoor=JSON.parse(JSON.stringify(DEF.renov_outdoor));
+  if(!S.struct)S.struct=JSON.parse(JSON.stringify(DEF.struct));
+  if(!S.todos)S.todos=[];
+  if(!S.renov_indoor.floorUnits)S.renov_indoor.floorUnits={};
+  if(!S.renov_outdoor.floorUnits)S.renov_outdoor.floorUnits={};
+  try{localStorage.setItem('capp4',JSON.stringify(S));}catch(e){}
+  // Re-render current page
+  const active=document.querySelector('.page.active');
+  if(active){
+    if(active.id==='page-home')renderTodos();
+    if(active.id==='page-renov')renderRenov();
+    if(active.id==='page-struct')renderStruct();
+  }
+}
+
+function save(){
+  try{localStorage.setItem('capp4',JSON.stringify(S));}catch(e){}
+  // Debounced cloud push (1 second)
+  if(_syncEnabled&&_fb){
+    setSyncStatus('','☁️ 上傳中…','#eab308');
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(()=>pushToCloud(),800);
+  }
+}
 function load(){
   try{
     const raw=localStorage.getItem('capp4')||localStorage.getItem('capp3')||localStorage.getItem('capp2')||localStorage.getItem('capp');
@@ -443,6 +550,143 @@ function load(){
       (S.todos||[]).forEach(t=>{if(!('assignee' in t))t.assignee='';});
     }
   }catch(e){}
+}
+
+// ══════════ SYNC SETUP MODAL ══════════
+function openSyncSetup(){
+  const cfgRaw=localStorage.getItem('fbCfg')||'';
+  const user=localStorage.getItem('fbUser')||'';
+  let curCfg={};try{curCfg=JSON.parse(cfgRaw);}catch{}
+  const isOn=!!cfgRaw;
+
+  const body=`<div class="f fc g3">
+    <div style="font-size:12px;color:var(--mut);line-height:1.65;
+      padding:10px 12px;background:var(--bg);border-radius:6px;border-left:3px solid #60a5fa;">
+      <b style="color:#93c5fd;">💡 設定說明</b><br>
+      貼上你的 Firebase 設定即可開啟<b style="color:#60a5fa;">多裝置即時同步</b>。
+      所有人使用同一組設定就會共用資料，任何人修改其他人會立刻看到。
+      <br><br>
+      <b style="color:#fbbf24;">若你還沒有 Firebase 專案</b>，按下方「📖 查看建立教學」按鈕，照著步驟做約需 10 分鐘。
+    </div>
+
+    <label class="lbl">
+      你的名字（顯示在修改紀錄用，選填）
+      <input id="syUser" class="inp" value="${esc(user)}" placeholder="例：小王">
+    </label>
+
+    <label class="lbl">
+      Firebase 設定 JSON <span style="color:var(--dim);font-size:10px;">（貼上從 Firebase 複製的 firebaseConfig 物件）</span>
+      <textarea id="syCfg" class="inp" rows="8" placeholder='{
+  "apiKey": "AIzaSy...",
+  "authDomain": "your-project.firebaseapp.com",
+  "projectId": "your-project",
+  "storageBucket": "your-project.appspot.com",
+  "messagingSenderId": "...",
+  "appId": "..."
+}' style="font-family:monospace;font-size:11px;resize:vertical;">${cfgRaw?esc(JSON.stringify(curCfg.fb||{},null,2)):''}</textarea>
+    </label>
+
+    <label class="lbl">
+      專案識別名稱 <span style="color:var(--dim);font-size:10px;">（多個工地可用不同名稱區分，留空預設為 main）</span>
+      <input id="syProj" class="inp" value="${esc(curCfg.projectId||'')}" placeholder="main">
+    </label>
+
+    <div class="f g2 fw" style="margin-top:4px;">
+      <button class="btn bs" style="flex:1;padding:10px;" onclick="showFbGuide()">📖 查看建立教學</button>
+      ${isOn?`<button class="btn bs" style="flex:1;padding:10px;background:#7f1d1d;color:#fff;" onclick="disableSync()">🔌 停用同步</button>`:''}
+      <button class="btn bp" style="flex:2;padding:10px;" onclick="saveSyncSetup()">儲存並啟用</button>
+    </div>
+  </div>`;
+
+  openModal('⚙️ 雲端同步設定',body,true);
+}
+
+function saveSyncSetup(){
+  const cfgText=document.getElementById('syCfg').value.trim();
+  const projId =document.getElementById('syProj').value.trim()||'main';
+  const user   =document.getElementById('syUser').value.trim();
+  if(!cfgText){alert('請貼上 Firebase 設定');return;}
+  let fbCfg;
+  try{fbCfg=JSON.parse(cfgText);}
+  catch(e){alert('設定格式錯誤：'+e.message+'\n\n請確認整段 JSON 貼上並且大括號完整');return;}
+  if(!fbCfg.apiKey||!fbCfg.projectId){alert('缺少必要欄位（apiKey, projectId）');return;}
+  localStorage.setItem('fbCfg',JSON.stringify({fb:fbCfg,projectId:projId}));
+  if(user)localStorage.setItem('fbUser',user);
+  fclose();
+  alert('✓ 已儲存，即將重新載入以啟用雲端同步');
+  setTimeout(()=>location.reload(),500);
+}
+
+function disableSync(){
+  if(!confirm('確定停用雲端同步？本機資料會保留，但不再與其他人同步。'))return;
+  localStorage.removeItem('fbCfg');
+  if(_fbUnsub)_fbUnsub();
+  fclose();
+  setTimeout(()=>location.reload(),300);
+}
+
+function showFbGuide(){
+  const body=`<div style="font-size:13px;line-height:1.75;color:var(--txt);">
+    <h3 style="color:#60a5fa;margin-bottom:10px;">📖 建立 Firebase 專案步驟</h3>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">① 建立專案</b>
+      <ol style="margin:6px 0 0 20px;color:var(--mut);">
+        <li>前往 <a href="https://console.firebase.google.com" target="_blank" style="color:#60a5fa;">console.firebase.google.com</a>（Google 帳號登入）</li>
+        <li>點「新增專案」→ 填個名稱（例：construction-tracker）</li>
+        <li>Google Analytics 可選停用（同步不需要）→ 建立專案</li>
+      </ol>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">② 啟用 Firestore Database</b>
+      <ol style="margin:6px 0 0 20px;color:var(--mut);">
+        <li>左側選單 → 「Firestore Database」→ 「建立資料庫」</li>
+        <li>選「以<b style="color:#fff;">正式環境</b>模式啟動」或「<b style="color:#fff;">測試</b>模式」（測試模式 30 天到期，正式環境需改規則）</li>
+        <li>位置選「asia-east1」（台灣較近）→ 啟用</li>
+      </ol>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">③ 設定安全規則（重要）</b>
+      <div style="margin-top:6px;color:var(--mut);">
+        到「Firestore Database → 規則」分頁，把規則改成：
+        <pre style="background:#000;color:#7dd3fc;padding:8px 10px;border-radius:4px;margin-top:6px;font-size:11px;overflow-x:auto;white-space:pre;">rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /projects/{id} {
+      allow read, write: if true;
+    }
+  }
+}</pre>
+        <div style="font-size:11px;margin-top:4px;color:#fbbf24;">⚠️ 這條規則允許任何知道你專案 ID 的人讀寫。請勿公開分享設定 JSON。</div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">④ 取得設定 JSON</b>
+      <ol style="margin:6px 0 0 20px;color:var(--mut);">
+        <li>左上齒輪圖示 → 「專案設定」</li>
+        <li>往下捲到「您的應用程式」→ 點 <b style="color:#fff;">&lt;/&gt;</b>（網頁）圖示</li>
+        <li>暱稱隨意輸入 → 「註冊應用程式」（不用勾 Hosting）</li>
+        <li>複製 <code style="color:#7dd3fc;">const firebaseConfig = {...}</code> 大括號內的內容</li>
+        <li>貼到本程式的「Firebase 設定 JSON」欄位</li>
+      </ol>
+    </div>
+
+    <div style="background:var(--bg);padding:12px 14px;border-radius:6px;margin-bottom:10px;">
+      <b style="color:#fbbf24;">⑤ 團隊成員共用</b>
+      <div style="margin-top:6px;color:var(--mut);">
+        把同一組設定 JSON 傳給團隊成員（LINE、Email 均可），
+        每個人在自己的網頁裡貼上，大家就會看到同一份資料並即時同步。
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn bp" style="padding:10px 28px;" onclick="openSyncSetup()">← 返回設定</button>
+    </div>
+  </div>`;
+  openModal('📖 Firebase 建立教學',body,true);
 }
 
 function exportData(){
@@ -1428,6 +1672,8 @@ window.addEventListener('afterprint',()=>{
 // ══════════ INIT ══════════
 load();
 renderHome();
+// Init Firebase sync (if configured)
+setTimeout(initFirebase,200);
 </script>
 </body>
 </html>
