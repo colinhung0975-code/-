@@ -139,6 +139,25 @@ body{background:var(--bg);color:var(--txt);
   color:var(--txt);font-weight:600;position:relative;}
 .rtb td.tnm[draggable="true"]{cursor:grab;}
 .rtb td.tnm[draggable="true"]:active{cursor:grabbing;}
+.rtb tr.sub-row td.sub-cell{background:#f8fafc;padding:6px 12px;border-left:3px solid #60a5fa;}
+.rtb tr.sub-row td.pc{opacity:.92;}
+.rtb tr.sub-row td.sub-pc .pcv{font-size:12px;padding:8px 4px;}
+.unit-grid{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;}
+.unit-input{display:flex;flex-direction:column;align-items:center;gap:1px;
+  background:rgba(255,255,255,.7);border-radius:3px;padding:2px 3px;min-width:36px;}
+.unit-input .ulbl{font-size:9px;font-weight:600;color:#0f172a;line-height:1;}
+.unit-input input{width:34px;border:1px solid #cbd5e1;background:#fff;
+  padding:1px 2px;font-size:11px;text-align:center;color:#0f172a;
+  border-radius:3px;font-family:inherit;outline:none;}
+.unit-input input:focus{border-color:#2563eb;background:#eff6ff;}
+.sub-btn{background:rgba(255,255,255,.85);border:1px solid #cbd5e1;border-radius:3px;
+  padding:1px 5px;font-size:10px;cursor:pointer;font-family:inherit;color:#475569;}
+.sub-btn:hover{background:#fff;color:#0f172a;}
+.sub-btn.has{background:#fef3c7;color:#92400e;border-color:#fbbf24;font-weight:700;}
+.sub-btn sup{font-size:8px;}
+.rtb .exp-arrow{display:inline-flex;align-items:center;gap:4px;
+  padding:2px 6px;border-radius:4px;transition:background .12s;}
+.rtb .exp-arrow:hover{background:#dbeafe;}
 .hdrow{display:flex;align-items:center;justify-content:center;gap:6px;}
 .hdrow.lf{justify-content:flex-start;}
 .pc{text-align:center;cursor:pointer;transition:filter .18s;}
@@ -363,10 +382,10 @@ body{background:var(--bg);color:var(--txt);
   <div class="tsec">
     <div class="tleg">
       <b style="color:#94a3b8;font-size:12px;">📋 本週待辦事項</b>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#eab308;border-radius:2px;margin-right:3px;"></span>延期1天</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-right:3px;"></span>延期2天+</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#b45309;border-radius:2px;margin-right:3px;"></span>延期1天</span>
+      <span style="color:#7f1d1d;">⚠️ 逾期事項自動移到下方表格</span>
       <span>☑ 已完成</span>
-      <span><span style="background:#2e1065;color:#a78bfa;font-size:9px;padding:1px 5px;border-radius:3px;">@處理人</span></span>
+      <span><span style="background:#ede9fe;color:#6d28d9;font-size:9px;padding:1px 5px;border-radius:3px;">@處理人</span></span>
       <span class="mla" style="color:#475569;font-size:10px;">資料存於本裝置</span>
       <button class="btn bs bsm" onclick="exportData()">📤 匯出</button>
       <button class="btn bs bsm" onclick="importData()">📥 匯入</button>
@@ -384,6 +403,45 @@ body{background:var(--bg);color:var(--txt);
     <input type="text" id="ttx" class="inp" style="flex:1;min-width:200px;" placeholder="事項內容">
     <input type="text" id="tasg" class="inp" style="width:130px;" placeholder="處理人員">
     <button class="btn bp" style="padding:9px 24px;font-size:14px;" onclick="addTodo()">＋ 新增</button>
+  </div>
+
+  <div id="ovdSec" class="tsec" style="display:none;border:1px solid #fecaca;background:#fef2f2;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <b style="color:#991b1b;font-size:13px;">⚠️ 逾期事項</b>
+      <span id="ovdCount" style="background:#dc2626;color:#fff;font-size:11px;font-weight:700;
+        padding:2px 8px;border-radius:10px;"></span>
+      <span style="color:#7f1d1d;font-size:11px;margin-left:auto;">點擊任何欄位即可直接修改</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="ovdTb" style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border-radius:6px;overflow:hidden;">
+        <thead>
+          <tr style="background:#fee2e2;">
+            <th style="padding:8px 10px;text-align:left;color:#7f1d1d;font-weight:700;width:40px;">完成</th>
+            <th style="padding:8px 10px;text-align:left;color:#7f1d1d;font-weight:700;">事項內容</th>
+            <th style="padding:8px 10px;text-align:center;color:#7f1d1d;font-weight:700;width:120px;">原訂日期</th>
+            <th style="padding:8px 10px;text-align:center;color:#7f1d1d;font-weight:700;width:80px;">延期天數</th>
+            <th style="padding:8px 10px;text-align:left;color:#7f1d1d;font-weight:700;width:120px;">處理人員</th>
+            <th style="padding:8px 10px;text-align:center;color:#7f1d1d;font-weight:700;width:60px;">刪除</th>
+          </tr>
+        </thead>
+        <tbody id="ovdBd"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tsec" style="border:1px solid #d1d5db;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <b style="color:#0f172a;font-size:13px;">📌 其他交辦事項</b>
+      <span id="othCount" style="background:#475569;color:#fff;font-size:11px;font-weight:700;
+        padding:2px 8px;border-radius:10px;"></span>
+      <span style="color:var(--mut);font-size:11px;margin-left:auto;">不限時間，可隨時新增、編輯、刪除</span>
+    </div>
+    <div id="othList" style="margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <input type="text" id="othTx" class="inp" style="flex:1;min-width:200px;" placeholder="新增其他交辦事項...">
+      <input type="text" id="othAsg" class="inp" style="width:130px;" placeholder="處理人員（選填）">
+      <button class="btn bp" style="padding:9px 24px;" onclick="addOther()">＋ 新增</button>
+    </div>
   </div>
 
   <div class="nbts">
@@ -507,6 +565,7 @@ const mkRenov=(trades,units,unitLabel)=>({
 });
 const DEF={
   todos:[],
+  others:[],
   renov_indoor:mkRenov([
     {id:'ti1',name:'泥作',   subs:['打底','粉刷','貼磚']},
     {id:'ti2',name:'輕隔間', subs:['骨架','封板','收邊']},
@@ -621,6 +680,7 @@ function mergeFromCloud(cloudState){
   if(!S.renov_outdoor)S.renov_outdoor=JSON.parse(JSON.stringify(DEF.renov_outdoor));
   if(!S.struct)S.struct=JSON.parse(JSON.stringify(DEF.struct));
   if(!S.todos)S.todos=[];
+  if(!Array.isArray(S.others))S.others=[];
   if(!S.renov_indoor.floorUnits)S.renov_indoor.floorUnits={};
   if(!S.renov_outdoor.floorUnits)S.renov_outdoor.floorUnits={};
   try{localStorage.setItem('capp4',JSON.stringify(S));}catch(e){}
@@ -854,6 +914,7 @@ function load(){
       if(!S.renov_outdoor.unitLabel)S.renov_outdoor.unitLabel='棟別';
       S.struct={...DEF.struct,...(S.struct||{})};
       (S.todos||[]).forEach(t=>{if(!('assignee' in t))t.assignee='';});
+      if(!Array.isArray(S.others))S.others=[];
     }
   }catch(e){}
 }
@@ -1273,7 +1334,10 @@ function renderHome(){
 }
 const getEff=t=>(!t.done&&t.date<today())?today():t.date;
 const getDly=t=>{if(t.done)return 0;return Math.max(0,diffD(t.originalDate,getEff(t)));};
-const dayItems=d=>S.todos.filter(t=>getEff(t)===d);
+const isOverdue=t=>!t.done&&getDly(t)>=2;
+// Overdue items DO NOT show in weekly grid
+const dayItems=d=>S.todos.filter(t=>!isOverdue(t)&&getEff(t)===d);
+const overdueItems=()=>S.todos.filter(isOverdue).sort((a,b)=>(a.originalDate||'').localeCompare(b.originalDate||''));
 
 function renderTodos(){
   const td=today(),days=rollWeekDays();
@@ -1284,7 +1348,7 @@ function renderTodos(){
     const its=dayItems(d);
     return`<td class="${d===td?'tc':''}">${its.map(t=>{
       const dl=getDly(t);
-      const cl=t.done?'#94a3b8':dl>=2?'#dc2626':dl===1?'#b45309':'#0f172a';
+      const cl=t.done?'#94a3b8':dl===1?'#b45309':'#0f172a';
       const dk=t.done?'line-through':'none';
       const np=(t.photos||[]).length;
       const handle='todo_'+t.id;
@@ -1306,6 +1370,142 @@ function renderTodos(){
       </div>${(t.photos&&t.photos.length)?`<div class="phs" style="margin-left:21px;margin-bottom:6px;">${t.photos.map(p=>`<div class="ph" style="width:48px;height:48px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}`;
     }).join('')}</td>`;
   }).join('');
+
+  renderOverdue();
+  renderOthers();
+}
+
+// ── Other Tasks (no time) ──
+function renderOthers(){
+  const list=S.others||[];
+  document.getElementById('othCount').textContent=list.length+' 筆';
+  const wrap=document.getElementById('othList');
+  if(list.length===0){
+    wrap.innerHTML=`<div style="color:var(--dim);font-size:12px;padding:14px;text-align:center;background:#f8fafc;border-radius:6px;">尚無交辦事項，可從下方新增 👇</div>`;
+    return;
+  }
+  wrap.innerHTML=list.map(o=>{
+    const np=(o.photos||[]).length;
+    const handle='other_'+o.id;
+    regPhotoHandle(handle,()=>S.others.find(x=>x.id===o.id),()=>renderOthers());
+    const cl=o.done?'#94a3b8':'#0f172a';
+    const dk=o.done?'line-through':'none';
+    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;
+      background:${o.done?'#f8fafc':'#fff'};border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;">
+      <input type="checkbox"${o.done?' checked':''} onchange="togOther('${o.id}')"
+        style="margin-top:3px;accent-color:#3b82f6;cursor:pointer;width:14px;height:14px;flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <input type="text" value="${esc(o.text)}" onblur="updOther('${o.id}','text',this.value)"
+          style="width:100%;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;
+          font-family:inherit;font-size:13px;color:${cl};text-decoration:${dk};outline:none;font-weight:500;"
+          onfocus="this.style.borderColor='#2563eb';this.style.background='#eff6ff';this.style.textDecoration='none';this.style.color='#0f172a';"
+          onblur="this.style.borderColor='transparent';this.style.background='transparent';this.style.textDecoration='${dk}';this.style.color='${cl}';updOther('${o.id}','text',this.value);">
+        ${o.assignee?`<span style="display:inline-block;font-size:10px;color:#6d28d9;background:#ede9fe;padding:1px 6px;border-radius:3px;margin-top:3px;">@${esc(o.assignee)}</span>`:''}
+        ${np?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">${o.photos.map(p=>`<div class="ph" style="width:42px;height:42px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}
+      </div>
+      <input type="text" value="${esc(o.assignee||'')}" placeholder="處理人" onblur="updOther('${o.id}','assignee',this.value)"
+        style="width:90px;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;
+        font-family:inherit;font-size:11px;color:#475569;outline:none;text-align:center;flex-shrink:0;"
+        onfocus="this.style.borderColor='#2563eb';this.style.background='#eff6ff';this.style.color='#0f172a';"
+        onblur="this.style.borderColor='transparent';this.style.background='transparent';this.style.color='#475569';updOther('${o.id}','assignee',this.value);">
+      <span style="display:inline-flex;gap:1px;flex-shrink:0;">
+        <button class="ac cam ${np?'has':''}" onclick="addPhotoMenu(event,'${handle}',true)" title="拍照">📷</button>
+        <button class="ac" onclick="addPhotoMenu(event,'${handle}',false)" title="上傳">📁</button>
+        <button class="ac dgr" onclick="delOther('${o.id}')" title="刪除">✕</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function addOther(){
+  const tx=document.getElementById('othTx').value.trim();
+  const asg=document.getElementById('othAsg').value.trim();
+  if(!tx)return;
+  if(!Array.isArray(S.others))S.others=[];
+  S.others.push({id:uid(),text:tx,assignee:asg,done:false,photos:[],createdAt:new Date().toISOString()});
+  save();
+  document.getElementById('othTx').value='';
+  document.getElementById('othAsg').value='';
+  renderOthers();
+}
+function togOther(id){
+  const o=S.others.find(x=>x.id===id);if(!o)return;
+  o.done=!o.done;save();renderOthers();
+}
+function updOther(id,field,val){
+  const o=S.others.find(x=>x.id===id);if(!o)return;
+  if(field==='text'&&!val.trim())return;
+  o[field]=field==='text'?val.trim():val;
+  save();
+}
+async function delOther(id){
+  if(!confirm('確定刪除此交辦事項？'))return;
+  const o=S.others.find(x=>x.id===id);
+  S.others=S.others.filter(x=>x.id!==id);save();renderOthers();
+  if(o&&o.photos)o.photos.forEach(p=>deletePhotoStorage(p));
+}
+document.getElementById('othTx').addEventListener('keydown',e=>{if(e.key==='Enter')addOther();});
+document.getElementById('othAsg').addEventListener('keydown',e=>{if(e.key==='Enter')addOther();});
+
+function renderOverdue(){
+  const items=overdueItems();
+  const sec=document.getElementById('ovdSec');
+  if(!items.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('ovdCount').textContent=items.length+' 筆';
+  const bd=document.getElementById('ovdBd');
+  bd.innerHTML=items.map(t=>{
+    const dl=getDly(t);
+    const np=(t.photos||[]).length;
+    const handle='ovdtodo_'+t.id;
+    regPhotoHandle(handle,()=>S.todos.find(x=>x.id===t.id),()=>renderTodos());
+    return `<tr style="border-top:1px solid #fecaca;">
+      <td style="padding:6px 10px;text-align:center;">
+        <input type="checkbox" onchange="togTodo('${t.id}')" style="accent-color:#16a34a;cursor:pointer;width:16px;height:16px;">
+      </td>
+      <td style="padding:4px 10px;color:#0f172a;">
+        <input type="text" value="${esc(t.text)}" onblur="updOvdField('${t.id}','text',this.value)"
+          style="width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font-family:inherit;font-size:12px;color:#0f172a;outline:none;"
+          onfocus="this.style.borderColor='#dc2626';this.style.background='#fff';"
+          onmouseover="if(this!==document.activeElement)this.style.background='#fef2f2';"
+          onmouseout="if(this!==document.activeElement)this.style.background='transparent';">
+        ${np?`<div style="margin-top:4px;display:flex;gap:3px;flex-wrap:wrap;">${t.photos.map(p=>`<div class="ph" style="width:36px;height:36px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}
+      </td>
+      <td style="padding:4px 6px;text-align:center;">
+        <input type="date" value="${esc(t.originalDate||t.date)}" onchange="updOvdField('${t.id}','originalDate',this.value)"
+          style="border:1px solid transparent;background:transparent;padding:4px;border-radius:4px;font-family:inherit;font-size:11px;color:#0f172a;outline:none;width:115px;"
+          onfocus="this.style.borderColor='#dc2626';this.style.background='#fff';">
+      </td>
+      <td style="padding:6px;text-align:center;color:#dc2626;font-weight:700;font-size:13px;">
+        ${dl} 天
+      </td>
+      <td style="padding:4px 6px;">
+        <input type="text" value="${esc(t.assignee||'')}" placeholder="—" onblur="updOvdField('${t.id}','assignee',this.value)"
+          style="width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font-family:inherit;font-size:12px;color:#0f172a;outline:none;"
+          onfocus="this.style.borderColor='#dc2626';this.style.background='#fff';"
+          onmouseover="if(this!==document.activeElement)this.style.background='#fef2f2';"
+          onmouseout="if(this!==document.activeElement)this.style.background='transparent';">
+      </td>
+      <td style="padding:6px;text-align:center;">
+        <button onclick="delTodo('${t.id}')" style="background:none;border:none;color:#dc2626;font-size:16px;cursor:pointer;padding:4px 8px;border-radius:4px;font-family:inherit;"
+          onmouseover="this.style.background='#fee2e2';"
+          onmouseout="this.style.background='none';">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updOvdField(id,field,val){
+  const t=S.todos.find(x=>x.id===id);if(!t)return;
+  if(field==='text'){if(!val.trim())return;t.text=val.trim();}
+  else if(field==='originalDate'){
+    if(!val)return;
+    t.originalDate=val;
+    // If original date changed, also update target date if it was equal
+    if(t.date<val||t.date===t.originalDate)t.date=val;
+  }
+  else t[field]=val;
+  save();renderTodos();
 }
 function addTodo(){
   const txt=document.getElementById('ttx').value.trim();
@@ -1319,7 +1519,27 @@ function addTodo(){
   renderTodos();
 }
 function togTodo(id){
-  const t=S.todos.find(x=>x.id===id);if(t){t.done=!t.done;save();renderTodos();}
+  const t=S.todos.find(x=>x.id===id);
+  if(!t)return;
+  t.done=!t.done;
+  if(t.done){t.completedAt=today();}
+  else{delete t.completedAt;}
+  save();renderTodos();
+}
+
+// Cleanup completed todos from yesterday or earlier (called at startup and periodically)
+function cleanupCompletedTodos(){
+  const td=today();
+  const before=S.todos.length;
+  S.todos=S.todos.filter(t=>{
+    if(t.done&&t.completedAt&&t.completedAt<td){
+      // Cleanup photos from this todo
+      if(t.photos)t.photos.forEach(p=>deletePhotoStorage(p));
+      return false;
+    }
+    return true;
+  });
+  if(S.todos.length!==before){save();}
 }
 async function delTodo(id){
   if(!confirm('確定刪除此待辦事項及所有照片？'))return;
@@ -1402,7 +1622,7 @@ function renderRenov(){
 
   document.getElementById('rleg').innerHTML=PC.map(([p,c])=>
     `<span><span style="width:14px;height:14px;border-radius:3px;display:inline-block;
-      background:${c};border:1px solid #334155;"></span>${p===0?'未開始':p===100?'完成':p+'%'}</span>`
+      background:${c};border:1px solid #cbd5e1;"></span>${p===0?'未開始':p===100?'完成':p+'%'}</span>`
   ).join('');
 
   const {floors,trades}=R();
@@ -1424,14 +1644,18 @@ function renderRenov(){
   </tr></thead><tbody>`;
 
   trades.forEach((tr,ti)=>{
-    h+=`<tr><td class="tnm" draggable="true"
+    const exp=!!tr.expanded;
+    // Trade summary row (clickable to expand/collapse)
+    h+=`<tr><td class="tnm trd-row" draggable="true"
       ondragstart="dragStart(event,'trade',${ti})"
       ondragover="dragOver(event,'trade',${ti})"
       ondragleave="dragLeave(event)"
       ondrop="dragDrop(event,'trade',${ti},R().trades,renderRenov)"
       ondragend="dragEnd(event)">
       <div class="hdrow lf">
-        <span>${esc(tr.name)}</span>
+        <span class="exp-arrow" onclick="toggleTradeExp('${esc(tr.id)}')" style="cursor:pointer;user-select:none;">
+          ${exp?'▼':'▶'} <b>${esc(tr.name)}</b>
+        </span>
         <button class="dotbtn" onclick="openTrMenu(event,${ti})" title="選項">⋮</button>
       </div></td>`;
     floors.forEach(fl=>{
@@ -1442,6 +1666,34 @@ function renderRenov(){
         <div class="pcv">${p>0?p+'%':'—'}</div></td>`;
     });
     h+=`<td style="background:var(--bg);border:1px solid var(--bg3);"></td></tr>`;
+
+    // Expanded sub-item rows
+    if(exp){
+      tr.subs.forEach(sub=>{
+        h+=`<tr class="sub-row"><td class="sub-cell">
+          <span style="padding-left:24px;color:#0f172a;font-size:12px;font-weight:600;">└ ${esc(sub)}</span>
+        </td>`;
+        floors.forEach(fl=>{
+          const p=getSubPct(fl,tr.id,sub);
+          const cell=getCell(fl,tr.id);
+          const units=getFlUnits(fl);
+          const nc=units.reduce((sum,u)=>sum+(cell.notes?.[u]?.[sub]||[]).length,0);
+          const np=units.reduce((sum,u)=>sum+(cell.photos?.[u]?.[sub]||[]).length,0);
+          const badges=(nc||np)
+            ? `<div style="position:absolute;top:2px;right:3px;display:flex;gap:2px;">
+                ${nc?`<span style="background:#fef3c7;color:#92400e;font-size:8px;padding:1px 3px;border-radius:3px;font-weight:700;">📝${nc}</span>`:''}
+                ${np?`<span style="background:#cffafe;color:#0e7490;font-size:8px;padding:1px 3px;border-radius:3px;font-weight:700;">📷${np}</span>`:''}
+              </div>`
+            : '';
+          h+=`<td class="pc sub-pc" style="background:${pBg(p)};color:${pTxt(p)};position:relative;"
+            onclick="openSubEdit('${esc(fl)}','${esc(tr.id)}','${esc(sub)}')"
+            title="點擊編輯「${esc(fl)} - ${esc(tr.name)} - ${esc(sub)}」各戶進度">
+            ${badges}
+            <div class="pcv">${p>0?p+'%':'—'}</div></td>`;
+        });
+        h+=`<td style="background:var(--bg);border:1px solid var(--bg3);"></td></tr>`;
+      });
+    }
   });
 
   h+=`<tr>
@@ -1451,6 +1703,125 @@ function renderRenov(){
     <td style="background:var(--bg);border:1px solid var(--bg3);"></td>
   </tr></tbody>`;
   document.getElementById('rtb').innerHTML=h;
+}
+
+// Open compact editor for ONE sub-item across all units of a floor
+let _editSub='';
+function openSubEdit(fl,tid,sub){
+  _fl=fl;_tid=tid;_editSub=sub;
+  renderSubEditView();
+}
+function renderSubEditView(){
+  const tr=R().trades.find(t=>t.id===_tid);if(!tr)return;
+  const cell=ensureCell(_fl,_tid);
+  const units=getFlUnits(_fl);
+  const label=getFlLabel(_fl);
+
+  let h=`<div class="f ai g2 mt2" style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bg3);">
+    <div style="font-size:13px;color:var(--mut);">
+      <b style="color:#b45309;">${esc(_fl)}</b> · 
+      <span style="color:#1e40af;font-weight:600;">${esc(tr.name)}</span> · 
+      <span style="color:#15803d;font-weight:600;">${esc(_editSub)}</span>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;"><table class="ctb" style="width:100%;"><thead><tr>
+    <th class="clf" style="width:90px;">${esc(label)}</th>
+    <th style="width:120px;">完成度 (%)</th>
+    <th>備註 / 照片</th>
+  </tr></thead><tbody>`;
+
+  units.forEach(u=>{
+    const v=cell.units?.[u]?.[_editSub]??0;
+    const nc=(cell.notes?.[u]?.[_editSub]||[]).length;
+    const np=(cell.photos?.[u]?.[_editSub]||[]).length;
+    h+=`<tr>
+      <td class="cnm" style="font-weight:700;color:#1e40af;">${esc(u)}</td>
+      <td style="text-align:center;">
+        <input type="number" class="pi" min="0" max="100" value="${v}"
+          data-unit="${esc(u)}" oninput="updSubEditCell(this)"
+          style="width:80px;height:32px;font-size:14px;font-weight:700;">
+        <span style="margin-left:6px;color:var(--mut);font-size:11px;">%</span>
+      </td>
+      <td style="text-align:left;padding:4px 8px;">
+        <button class="btn bs bsm" style="margin-right:4px;" onclick="openNotesFromSubEdit('${esc(u)}')">
+          📝 備註${nc?` (${nc})`:''}
+        </button>
+        <button class="btn bs bsm" onclick="openPhotosFromSubEdit('${esc(u)}')">
+          📷 照片${np?` (${np})`:''}
+        </button>
+      </td>
+    </tr>`;
+  });
+
+  const subAvg=getSubPct(_fl,_tid,_editSub);
+  h+=`<tr style="background:#eff6ff;">
+    <td class="cnm" style="font-weight:700;color:#1e40af;">平均</td>
+    <td id="subEditAvg" style="text-align:center;color:#1e40af;font-weight:700;font-size:16px;">${subAvg}%</td>
+    <td></td>
+  </tr></tbody></table></div>
+
+  <div class="mt3" style="font-size:11px;color:var(--dim);">
+    💡 直接修改各${esc(label)}的完成度，平均自動計算。
+  </div>`;
+
+  openModal(`${esc(_fl)} - ${esc(tr.name)} - ${esc(_editSub)}`,h,true);
+}
+
+function updSubEditCell(inp){
+  const u=inp.dataset.unit;
+  const v=Math.max(0,Math.min(100,parseInt(inp.value)||0));
+  inp.value=v;
+  const cell=ensureCell(_fl,_tid);
+  if(!cell.units[u])cell.units[u]={};
+  cell.units[u][_editSub]=v;
+  save();
+
+  // Update average shown in modal
+  const avg=getSubPct(_fl,_tid,_editSub);
+  const avgEl=document.getElementById('subEditAvg');
+  if(avgEl)avgEl.textContent=avg+'%';
+
+  // Update parent table cells
+  const parentCell=document.querySelector(`[data-fl="${_fl}"][data-tid="${_tid}"]`);
+  if(parentCell){
+    const p=getCPct(_fl,_tid);
+    parentCell.style.background=pBg(p);
+    parentCell.style.color=pTxt(p);
+    const pcv=parentCell.querySelector('.pcv');
+    if(pcv)pcv.textContent=p>0?p+'%':'—';
+  }
+  // Refresh sub-row cells (since they show percentage)
+  // Easiest is to re-render table; debounced
+  clearTimeout(window._subRefresh);
+  window._subRefresh=setTimeout(()=>renderRenov(),400);
+}
+
+function openNotesFromSubEdit(u){
+  _unit=u;_sub=_editSub;renderNotesView();
+}
+function openPhotosFromSubEdit(u){
+  _unit=u;_sub=_editSub;renderCellPhotosView();
+}
+function renderCellMatrixFromSubEdit(){
+  renderCellMatrix();
+}
+
+// Toggle trade expansion in main renov table
+function toggleTradeExp(tid){
+  const tr=R().trades.find(t=>t.id===tid);
+  if(!tr)return;
+  tr.expanded=!tr.expanded;
+  save();renderRenov();
+}
+
+// Get progress percentage for a single sub-item across all units of a floor
+function getSubPct(fl,tid,sub){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return 0;
+  const cell=getCell(fl,tid);
+  const units=getFlUnits(fl);
+  const v=units.map(u=>cell.units?.[u]?.[sub]??0);
+  return v.length?Math.round(v.reduce((a,b)=>a+b)/v.length):0;
 }
 
 function openFlMenu(e,i){
@@ -1469,8 +1840,143 @@ function openTrMenu(e,i){
     onReorder:renderRenov,
     onDelete:()=>delTrade(tr.id),
     extras:[
+      {label:'➕ 新增細項', fn:()=>openAddSubToTrade(tr.id)},
+      {label:'📋 管理細項（排序/刪除）', fn:()=>openManageSubs(tr.id)},
       {label:'✏️ 重新命名工種', fn:()=>openRenameTrade(tr.id)},
     ]});
+}
+
+function openAddSubToTrade(tid){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return;
+  openModal(`為「${esc(tr.name)}」新增細項`,`<div class="f fc g3">
+    <div style="font-size:12px;color:var(--mut);padding:8px 10px;background:#eff6ff;
+      border-radius:4px;border-left:3px solid #2563eb;">
+      💡 目前「${esc(tr.name)}」有 <b>${tr.subs.length}</b> 個細項：${tr.subs.map(esc).join('、')||'（無）'}
+    </div>
+    <label class="lbl">細項名稱
+      <input id="atsName" class="inp" placeholder="例：防水處理">
+    </label>
+    <div style="font-size:11px;color:var(--dim);">
+      💡 可一次新增多個，用逗號分隔，例如：<code style="color:#2563eb;">打底, 粉刷, 貼磚</code>
+    </div>
+    <button class="btn bp" style="padding:10px;" onclick="doAddSubToTrade('${esc(tid)}')">確認新增</button>
+  </div>`);
+}
+
+function doAddSubToTrade(tid){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return;
+  const inp=document.getElementById('atsName').value;
+  const newSubs=inp.split(/[,，、\n]/).map(s=>s.trim()).filter(Boolean);
+  if(!newSubs.length){alert('請輸入至少一個細項名稱');return;}
+  const dupes=[],added=[];
+  newSubs.forEach(n=>{
+    if(tr.subs.includes(n))dupes.push(n);
+    else{tr.subs.push(n);added.push(n);}
+  });
+  if(!added.length){alert('全部都已存在：'+dupes.join('、'));return;}
+  tr.expanded=true; // auto expand to show new items
+  save();fclose();renderRenov();
+  if(dupes.length){
+    setTimeout(()=>alert(`✓ 已新增 ${added.length} 個細項：${added.join('、')}\n（${dupes.join('、')} 已存在略過）`),100);
+  }
+}
+
+function openManageSubs(tid){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return;
+  if(!tr.subs.length){
+    openModal(`管理「${esc(tr.name)}」細項`,`<div class="f fc g3">
+      <div style="text-align:center;color:var(--dim);padding:20px;">
+        此工種目前沒有任何細項
+      </div>
+      <button class="btn bp" style="padding:10px;" onclick="openAddSubToTrade('${esc(tid)}')">＋ 新增細項</button>
+    </div>`);
+    return;
+  }
+  let h=`<div class="f fc g2">
+    <div style="font-size:12px;color:var(--mut);padding:8px 10px;background:#eff6ff;
+      border-radius:4px;border-left:3px solid #2563eb;margin-bottom:6px;">
+      💡 拖曳左側 ⋮⋮ 排序，按 ✕ 刪除，按 ✎ 重新命名
+    </div>`;
+  tr.subs.forEach((s,i)=>{
+    h+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;
+      background:#fff;border:1px solid #cbd5e1;border-radius:6px;">
+      <span style="color:var(--dim);font-size:12px;cursor:grab;user-select:none;">⋮⋮</span>
+      <span style="color:#475569;font-size:11px;width:24px;">#${i+1}</span>
+      <input type="text" value="${esc(s)}" id="msi${i}" style="flex:1;border:1px solid transparent;
+        background:transparent;padding:5px 7px;border-radius:4px;font-family:inherit;font-size:13px;
+        color:#0f172a;outline:none;font-weight:600;"
+        onfocus="this.style.borderColor='#2563eb';this.style.background='#eff6ff';"
+        onblur="this.style.borderColor='transparent';this.style.background='transparent';doRenameSub('${esc(tid)}',${i},this.value);">
+      <button class="ac" onclick="moveSubInTrade('${esc(tid)}',${i},-1)" title="上移" ${i===0?'disabled':''}
+        style="opacity:${i===0?'0.3':'1'};">▲</button>
+      <button class="ac" onclick="moveSubInTrade('${esc(tid)}',${i},1)" title="下移" ${i===tr.subs.length-1?'disabled':''}
+        style="opacity:${i===tr.subs.length-1?'0.3':'1'};">▼</button>
+      <button class="ac dgr" onclick="delSubFromTrade('${esc(tid)}',${i})" title="刪除">✕</button>
+    </div>`;
+  });
+  h+=`<button class="btn bp" style="padding:10px;margin-top:8px;" onclick="openAddSubToTrade('${esc(tid)}')">＋ 新增細項</button>
+  </div>`;
+  openModal(`管理「${esc(tr.name)}」細項`,h);
+}
+
+function doRenameSub(tid,i,newName){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr||!tr.subs[i])return;
+  newName=newName.trim();
+  if(!newName)return;
+  if(newName===tr.subs[i])return;
+  if(tr.subs.includes(newName)){alert('名稱重複');return;}
+  const oldName=tr.subs[i];
+  tr.subs[i]=newName;
+  // Migrate cell data: cells store unit→sub→percentage; need to rename `sub` keys
+  Object.keys(R().cells).forEach(ck=>{
+    if(!ck.endsWith('_'+tid))return;
+    const cell=R().cells[ck];
+    ['units','notes','photos'].forEach(kind=>{
+      if(!cell[kind])return;
+      Object.keys(cell[kind]).forEach(u=>{
+        if(cell[kind][u]&&cell[kind][u][oldName]!==undefined){
+          cell[kind][u][newName]=cell[kind][u][oldName];
+          delete cell[kind][u][oldName];
+        }
+      });
+    });
+  });
+  save();
+}
+
+function moveSubInTrade(tid,i,dir){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return;
+  const ni=i+dir;
+  if(ni<0||ni>=tr.subs.length)return;
+  [tr.subs[i],tr.subs[ni]]=[tr.subs[ni],tr.subs[i]];
+  save();
+  openManageSubs(tid); // re-render
+  // Re-render main table in background
+  renderRenov();
+}
+
+function delSubFromTrade(tid,i){
+  const tr=R().trades.find(t=>t.id===tid);if(!tr)return;
+  const subName=tr.subs[i];
+  if(tr.subs.length<=1){alert('至少要保留 1 個細項');return;}
+  if(!confirm(`確定刪除細項「${subName}」？已輸入的相關進度資料也會一併移除。`))return;
+  tr.subs.splice(i,1);
+  // Also clean up cell data for this sub
+  Object.keys(R().cells).forEach(ck=>{
+    if(!ck.endsWith('_'+tid))return;
+    const cell=R().cells[ck];
+    ['units','notes','photos'].forEach(kind=>{
+      if(!cell[kind])return;
+      Object.keys(cell[kind]).forEach(u=>{
+        if(cell[kind][u]&&cell[kind][u][subName]!==undefined){
+          delete cell[kind][u][subName];
+        }
+      });
+    });
+  });
+  save();
+  openManageSubs(tid);
+  renderRenov();
 }
 
 function openRenameFloor(fl){
@@ -1747,8 +2253,8 @@ function renderCellMatrix(){
   const isCustom=isCustomFl(_fl);
 
   const tag=isCustom
-    ? `<span style="font-size:9px;color:#fbbf24;font-weight:normal;background:#78350f;padding:1px 5px;border-radius:3px;margin-left:4px;">專屬</span>`
-    : `<span style="font-size:9px;color:#60a5fa;font-weight:normal;background:#1e3a5f;padding:1px 5px;border-radius:3px;margin-left:4px;">全域</span>`;
+    ? `<span style="font-size:9px;color:#fff;font-weight:600;background:#b45309;padding:2px 6px;border-radius:3px;margin-left:4px;">專屬</span>`
+    : `<span style="font-size:9px;color:#fff;font-weight:600;background:#1e40af;padding:2px 6px;border-radius:3px;margin-left:4px;">全域</span>`;
 
   let h=`<div style="overflow-x:auto;"><table class="ctb"><thead><tr><th class="clf">細項 \\ ${esc(label)}${tag}</th>`;
   units.forEach((u,ui)=>{
@@ -1759,11 +2265,11 @@ function renderCellMatrix(){
       ondrop="dragDrop(event,'unit',${ui},getEditableUnits(),renderCellMatrix)"
       ondragend="dragEnd(event)">
       <div class="hdrow">
-        <span style="color:#93c5fd;">${esc(u)}</span>
+        <span style="color:#1e40af;font-weight:700;">${esc(u)}</span>
         <button class="dotbtn" onclick="openUnMenu(event,${ui})">⋮</button>
       </div></th>`;
   });
-  h+=`<th style="color:var(--dim);font-size:11px;">橫向平均</th></tr></thead><tbody>`;
+  h+=`<th style="color:var(--mut);font-size:11px;font-weight:700;">橫向平均</th></tr></thead><tbody>`;
 
   tr.subs.forEach((s,si)=>{
     h+=`<tr><td class="cnm" draggable="true"
@@ -1773,7 +2279,7 @@ function renderCellMatrix(){
       ondrop="dragDrop(event,'sub',${si},R().trades.find(t=>t.id==='${_tid}').subs,renderCellMatrix)"
       ondragend="dragEnd(event)">
       <div class="hdrow lf">
-        <span>${esc(s)}</span>
+        <span style="color:#0f172a;font-weight:700;">${esc(s)}</span>
         <button class="dotbtn" onclick="openSbMenu(event,${si})">⋮</button>
       </div></td>`;
     units.forEach((u,ui)=>{
@@ -1788,16 +2294,16 @@ function renderCellMatrix(){
       </div></td>`;
     });
     const sa=calcRowAvg(cell,s,units);
-    h+=`<td id="sa${si}" style="color:#60a5fa;font-weight:700;">${sa}%</td></tr>`;
+    h+=`<td id="sa${si}" style="color:#1e40af;font-weight:700;background:#eff6ff;">${sa}%</td></tr>`;
   });
 
-  h+=`<tr class="avgr"><td style="color:var(--dim);font-weight:700;padding:8px 10px;text-align:left;">縱向平均</td>`;
+  h+=`<tr class="avgr"><td style="color:var(--txt);font-weight:700;padding:8px 10px;text-align:left;">縱向平均</td>`;
   units.forEach((u,ui)=>{
     const ua=calcColAvg(cell,u,tr.subs);
-    h+=`<td id="ua${ui}" style="color:#34d399;font-weight:700;">${ua}%</td>`;
+    h+=`<td id="ua${ui}" style="color:#15803d;font-weight:700;background:#f0fdf4;">${ua}%</td>`;
   });
   const tot=calcPct(cell.units,tr.subs,units);
-  h+=`<td id="tot" style="color:#f59e0b;font-weight:700;font-size:14px;">${tot}%</td></tr>`;
+  h+=`<td id="tot" style="color:#b45309;font-weight:700;font-size:14px;background:#fffbeb;">${tot}%</td></tr>`;
   h+=`</tbody></table></div>
 
   <div class="f g2 mt3 fw">
@@ -1994,9 +2500,9 @@ function renderNotesView(){
   let h=`<div class="f ai g2 mt2" style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bg3);">
     <button class="btn bs bsm" onclick="renderCellMatrix()">← 回矩陣</button>
     <div style="font-size:13px;color:var(--mut);">
-      <b style="color:#fbbf24;">${esc(_fl)} · ${esc(trName)}</b> / 
-      <span style="color:#93c5fd;">${esc(_unit)}</span> × 
-      <span style="color:#34d399;">${esc(_sub)}</span>
+      <b style="color:#b45309;">${esc(_fl)} · ${esc(trName)}</b> / 
+      <span style="color:#1e40af;font-weight:600;">${esc(_unit)}</span> × 
+      <span style="color:#15803d;font-weight:600;">${esc(_sub)}</span>
     </div>
   </div>`;
 
@@ -2015,7 +2521,7 @@ function renderNotesView(){
       );
       h+=`<div class="note">
         <div class="nmt">
-          <span><b style="color:#a78bfa;">${esc(n.author||'匿名')}</b> · ${fmtDT(n.createdAt)}</span>
+          <span><b style="color:#6d28d9;">${esc(n.author||'匿名')}</b> · ${fmtDT(n.createdAt)}</span>
           <button class="bd" onclick="delNote('${esc(n.id)}')">刪除</button>
         </div>
         <div class="ntx">${esc(n.text)}</div>
@@ -2343,9 +2849,12 @@ window.addEventListener('afterprint',()=>{
 
 // ══════════ INIT ══════════
 load();
+cleanupCompletedTodos();
 renderHome();
 // Init Firebase sync (if configured)
 setTimeout(()=>{initFirebase();setPhotoStatus();},200);
+// Periodic check: every 30 min, clean up old completed todos (in case user keeps tab open across midnight)
+setInterval(()=>{cleanupCompletedTodos();renderTodos();},30*60*1000);
 </script>
 </body>
 </html>
