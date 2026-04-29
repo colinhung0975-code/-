@@ -283,35 +283,35 @@ body{background:var(--bg);color:var(--txt);
 .sched-meta .meta-item b{color:#0f172a;}
 
 .sched-wrap{background:#fff;border-radius:8px;border:1px solid #e2e8f0;overflow:auto;}
-.sched-tb{border-collapse:collapse;font-size:11px;width:100%;}
-.sched-tb th,.sched-tb td{border:1px solid #e2e8f0;padding:4px 6px;text-align:center;
-  white-space:nowrap;}
-.sched-tb th{background:#f1f5f9;color:#0f172a;font-weight:700;font-size:11px;
+.sched-tb{border-collapse:collapse;font-size:12px;width:100%;}
+.sched-tb th,.sched-tb td{border:1px solid #cbd5e1;padding:5px 6px;text-align:center;
+  white-space:nowrap;color:#0f172a;}
+.sched-tb th{background:#e2e8f0;color:#0f172a;font-weight:700;font-size:13px;
   position:sticky;top:0;z-index:5;}
 .sched-tb th.cat-h{width:60px;background:#e2e8f0;}
-.sched-tb th.proj-h{width:200px;background:#e2e8f0;text-align:left;padding-left:10px;}
-.sched-tb th.dr-h{width:78px;}
-.sched-tb th.days-h{width:48px;background:#fff7ed;color:#9a3412;}
-.sched-tb th.date-h{min-width:32px;padding:4px 2px;font-size:10px;}
-.sched-tb th.date-h.today{background:#fef3c7;color:#92400e;}
-.sched-tb th.date-h.weekend{background:#fafafa;color:#94a3b8;}
-.sched-tb th.dow-h{font-size:10px;font-weight:600;color:#475569;background:#fff;}
-.sched-tb th.dow-h.today{background:#fef3c7;color:#92400e;}
-.sched-tb th.dow-h.weekend{color:#94a3b8;}
+.sched-tb th.proj-h{width:220px;background:#e2e8f0;text-align:left;padding-left:12px;font-size:13px;}
+.sched-tb th.dr-h{width:88px;font-size:12px;}
+.sched-tb th.days-h{width:54px;background:#fed7aa;color:#7c2d12;font-size:13px;}
+.sched-tb th.date-h{min-width:38px;padding:5px 3px;font-size:13px;font-weight:700;color:#0f172a;}
+.sched-tb th.date-h.today{background:#fef3c7;color:#7c2d12;}
+.sched-tb th.date-h.weekend{background:#f1f5f9;color:#475569;}
+.sched-tb th.dow-h{font-size:12px;font-weight:700;color:#0f172a;background:#fff;}
+.sched-tb th.dow-h.today{background:#fef3c7;color:#7c2d12;}
+.sched-tb th.dow-h.weekend{color:#475569;background:#fafafa;}
 
-.sched-tb td.cat-cell{background:#fef3c7;color:#92400e;font-weight:700;
-  writing-mode:vertical-rl;text-orientation:upright;font-size:12px;width:36px;}
-.sched-tb td.proj-cell{text-align:left;padding:4px 10px;color:#0f172a;
-  font-weight:500;background:#fafafa;}
-.sched-tb td.dt-cell{font-size:10px;color:#475569;background:#fafafa;}
-.sched-tb td.days-cell{font-size:11px;color:#9a3412;background:#fff7ed;font-weight:600;}
-.sched-tb td.day-cell{padding:0;height:28px;width:32px;background:#fff;}
+.sched-tb td.cat-cell{background:#fef3c7;color:#7c2d12;font-weight:700;
+  writing-mode:vertical-rl;text-orientation:upright;font-size:13px;width:36px;}
+.sched-tb td.proj-cell{text-align:left;padding:6px 12px;color:#0f172a;
+  font-weight:600;background:#fafafa;font-size:13px;}
+.sched-tb td.dt-cell{font-size:11px;color:#0f172a;background:#fafafa;font-weight:500;}
+.sched-tb td.days-cell{font-size:12px;color:#7c2d12;background:#fff7ed;font-weight:700;}
+.sched-tb td.day-cell{padding:0;height:30px;width:38px;background:#fff;}
 .sched-tb td.day-cell.weekend{background:#fafafa;}
 .sched-tb td.day-cell.today{background:#fef3c7;}
 .sched-tb td.day-cell.active{background:#0066cc;}
 .sched-tb td.day-cell.active.today{background:#0050a0;}
-.sched-tb tr.subhdr td{background:#fff7ed;color:#9a3412;text-align:left;
-  padding:6px 12px;font-weight:700;}
+.sched-tb tr.subhdr td{background:#fde68a;color:#7c2d12;text-align:left;
+  padding:7px 14px;font-weight:700;font-size:13px;}
 
 .sheet-pick-list{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;}
 .sheet-pick-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
@@ -533,7 +533,7 @@ body{background:var(--bg);color:var(--txt);
 
   <div class="nbts">
     <button class="nbtn" style="background:linear-gradient(135deg,#1d4ed8,#1e40af);"
-      onclick="go('struct')">📅&nbsp; 三週進度表</button>
+      onclick="go('struct')">📅&nbsp; 進度表</button>
     <button class="nbtn" style="background:linear-gradient(135deg,#0f766e,#0d9488);"
       onclick="go('renov','indoor')">🔨&nbsp; 室內裝修</button>
     <button class="nbtn" style="background:linear-gradient(135deg,#b45309,#d97706);"
@@ -568,7 +568,7 @@ body{background:var(--bg);color:var(--txt);
 <div id="page-struct" class="page">
   <div class="phdr">
     <button class="bback" onclick="go('home')">← 返回</button>
-    <h1>📅 三週進度表</h1>
+    <h1>📅 進度表</h1>
     <span id="sinf" style="color:var(--dim);font-size:12px;"></span>
     <div class="mla f g2">
       <button class="btn bp bsm" onclick="openExcelImport()">📤 上傳 Excel</button>
@@ -1421,7 +1421,12 @@ function renderHome(){
 }
 const getEff=t=>(!t.done&&t.date<today())?today():t.date;
 const getDly=t=>{if(t.done)return 0;return Math.max(0,diffD(t.originalDate,getEff(t)));};
-const isOverdue=t=>!t.done&&getDly(t)>=2;
+// Item is overdue if not done AND delay >= 2 days,
+// OR if it WAS overdue but completed today (kept visible until midnight cleanup)
+const isOverdue=t=>{
+  if(!t.done)return getDly(t)>=2;
+  return t.completedAt===today()&&t.wasOverdue;
+};
 // Overdue items DO NOT show in weekly grid
 const dayItems=d=>S.todos.filter(t=>!isOverdue(t)&&getEff(t)===d);
 const overdueItems=()=>S.todos.filter(isOverdue).sort((a,b)=>(a.originalDate||'').localeCompare(b.originalDate||''));
@@ -1546,40 +1551,49 @@ function renderOverdue(){
     const np=(t.photos||[]).length;
     const handle='ovdtodo_'+t.id;
     regPhotoHandle(handle,()=>S.todos.find(x=>x.id===t.id),()=>renderTodos());
-    return `<tr style="border-top:1px solid #fecaca;">
+    const isDone=!!t.done;
+    const txtCol=isDone?'#94a3b8':'#0f172a';
+    const dec=isDone?'line-through':'none';
+    const rowBg=isDone?'background:#f8fafc;':'';
+    return `<tr style="border-top:1px solid #fecaca;${rowBg}">
       <td style="padding:6px 10px;text-align:center;">
-        <input type="checkbox" onchange="togTodo('${t.id}')" style="accent-color:#16a34a;cursor:pointer;width:16px;height:16px;">
+        <input type="checkbox"${isDone?' checked':''} onchange="togTodo('${t.id}')" style="accent-color:#16a34a;cursor:pointer;width:16px;height:16px;">
       </td>
-      <td style="padding:4px 10px;color:#0f172a;">
-        <input type="text" value="${esc(t.text)}" onblur="updOvdField('${t.id}','text',this.value)"
-          style="width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font-family:inherit;font-size:12px;color:#0f172a;outline:none;"
-          onfocus="this.style.borderColor='#dc2626';this.style.background='#fff';"
-          onmouseover="if(this!==document.activeElement)this.style.background='#fef2f2';"
-          onmouseout="if(this!==document.activeElement)this.style.background='transparent';">
+      <td style="padding:4px 10px;color:${txtCol};">
+        <input type="text" value="${esc(t.text)}" onblur="updOvdField('${t.id}','text',this.value)" ${isDone?'readonly':''}
+          style="width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font-family:inherit;font-size:12px;color:${txtCol};text-decoration:${dec};outline:none;"
+          onfocus="if(!this.readOnly){this.style.borderColor='#dc2626';this.style.background='#fff';}"
+          onmouseover="if(!this.readOnly && this!==document.activeElement)this.style.background='#fef2f2';"
+          onmouseout="if(!this.readOnly && this!==document.activeElement)this.style.background='transparent';">
         ${np?`<div style="margin-top:4px;display:flex;gap:3px;flex-wrap:wrap;">${t.photos.map(p=>`<div class="ph" style="width:36px;height:36px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}
       </td>
       <td style="padding:4px 6px;text-align:center;">
-        <input type="date" value="${esc(t.originalDate||t.date)}" onchange="updOvdField('${t.id}','originalDate',this.value)"
-          style="border:1px solid transparent;background:transparent;padding:4px;border-radius:4px;font-family:inherit;font-size:11px;color:#0f172a;outline:none;width:115px;"
-          onfocus="this.style.borderColor='#dc2626';this.style.background='#fff';">
+        <input type="date" value="${esc(t.originalDate||t.date)}" onchange="updOvdField('${t.id}','originalDate',this.value)" ${isDone?'disabled':''}
+          style="border:1px solid transparent;background:transparent;padding:4px;border-radius:4px;font-family:inherit;font-size:11px;color:${txtCol};text-decoration:${dec};outline:none;width:115px;"
+          onfocus="if(!this.disabled){this.style.borderColor='#dc2626';this.style.background='#fff';}">
       </td>
-      <td style="padding:6px;text-align:center;color:#dc2626;font-weight:700;font-size:13px;">
+      <td style="padding:6px;text-align:center;color:${isDone?'#94a3b8':'#dc2626'};font-weight:700;font-size:13px;text-decoration:${dec};">
         ${dl} 天
       </td>
       <td style="padding:4px 6px;">
-        <input type="text" value="${esc(t.assignee||'')}" placeholder="—" onblur="updOvdField('${t.id}','assignee',this.value)"
-          style="width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font-family:inherit;font-size:12px;color:#0f172a;outline:none;"
-          onfocus="this.style.borderColor='#dc2626';this.style.background='#fff';"
-          onmouseover="if(this!==document.activeElement)this.style.background='#fef2f2';"
-          onmouseout="if(this!==document.activeElement)this.style.background='transparent';">
+        <input type="text" value="${esc(t.assignee||'')}" placeholder="—" onblur="updOvdField('${t.id}','assignee',this.value)" ${isDone?'readonly':''}
+          style="width:100%;border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:4px;font-family:inherit;font-size:12px;color:${txtCol};text-decoration:${dec};outline:none;"
+          onfocus="if(!this.readOnly){this.style.borderColor='#dc2626';this.style.background='#fff';}"
+          onmouseover="if(!this.readOnly && this!==document.activeElement)this.style.background='#fef2f2';"
+          onmouseout="if(!this.readOnly && this!==document.activeElement)this.style.background='transparent';">
       </td>
       <td style="padding:6px;text-align:center;">
-        <button onclick="delTodo('${t.id}')" style="background:none;border:none;color:#dc2626;font-size:16px;cursor:pointer;padding:4px 8px;border-radius:4px;font-family:inherit;"
+        <button onclick="softDelOverdue('${t.id}')" title="${isDone?'取消刪除':'刪除（隔日清除）'}" style="background:none;border:none;color:${isDone?'#94a3b8':'#dc2626'};font-size:16px;cursor:pointer;padding:4px 8px;border-radius:4px;font-family:inherit;"
           onmouseover="this.style.background='#fee2e2';"
-          onmouseout="this.style.background='none';">✕</button>
+          onmouseout="this.style.background='none';">${isDone?'↩':'✕'}</button>
       </td>
     </tr>`;
   }).join('');
+}
+
+// Soft delete: same as toggling done (will be cleared by midnight cleanup)
+function softDelOverdue(id){
+  togTodo(id);
 }
 
 function updOvdField(id,field,val){
@@ -1608,9 +1622,16 @@ function addTodo(){
 function togTodo(id){
   const t=S.todos.find(x=>x.id===id);
   if(!t)return;
+  // Detect overdue state BEFORE flipping done
+  const wasOverdueBefore=getDly(t)>=2;
   t.done=!t.done;
-  if(t.done){t.completedAt=today();}
-  else{delete t.completedAt;}
+  if(t.done){
+    t.completedAt=today();
+    t.wasOverdue=wasOverdueBefore;
+  }else{
+    delete t.completedAt;
+    delete t.wasOverdue;
+  }
   save();renderTodos();
 }
 
@@ -2674,8 +2695,8 @@ function renderStruct(){
     inf.textContent='尚未上傳進度表';
     host.innerHTML=`<div class="sched-empty">
       <div class="em-icon">📊</div>
-      <h3>尚未上傳三週進度表</h3>
-      <p>點右上角「📤 上傳 Excel」匯入您的工程三週進度表 .xls / .xlsx 檔案。<br>
+      <h3>尚未上傳進度表</h3>
+      <p>點右上角「📤 上傳 Excel」匯入您的工程進度表 .xls / .xlsx 檔案。<br>
          系統會自動解析工項、起訖日期、進度色塊。</p>
       <button class="btn bp" style="padding:11px 24px;font-size:14px;" onclick="openExcelImport()">📤 立即上傳 Excel</button>
     </div>`;
@@ -2701,7 +2722,6 @@ function renderStruct(){
   <div class="sched-wrap"><table class="sched-tb">
     <thead>
       <tr>
-        <th class="cat-h" rowspan="2">類別</th>
         <th class="proj-h" rowspan="2">工程項目</th>
         <th class="dr-h" colspan="2">日期</th>
         <th class="days-h" rowspan="2">天數</th>`;
@@ -2729,10 +2749,9 @@ function renderStruct(){
     // Show category subheader when changes
     if(it.cat&&it.cat!==curCat){
       curCat=it.cat;
-      h+=`<tr class="subhdr"><td colspan="${5+dates.length}">▸ ${esc(it.cat)}</td></tr>`;
+      h+=`<tr class="subhdr"><td colspan="${4+dates.length}">▸ ${esc(it.cat)}</td></tr>`;
     }
     h+=`<tr>
-      <td class="cat-cell">${esc(it.cat||'').slice(0,2)}</td>
       <td class="proj-cell">${esc(it.name||'')}</td>
       <td class="dt-cell">${esc(fmtROC(it.start))}</td>
       <td class="dt-cell">${esc(fmtROC(it.end))}</td>
