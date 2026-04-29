@@ -1798,13 +1798,10 @@ function updSubEditCell(inp){
 }
 
 function openNotesFromSubEdit(u){
-  _unit=u;_sub=_editSub;renderNotesView();
+  _unit=u;_sub=_editSub;_noteOrigin='subEdit';renderNotesView();
 }
 function openPhotosFromSubEdit(u){
-  _unit=u;_sub=_editSub;renderCellPhotosView();
-}
-function renderCellMatrixFromSubEdit(){
-  renderCellMatrix();
+  _unit=u;_sub=_editSub;_noteOrigin='subEdit';renderCellPhotosView();
 }
 
 // Toggle trade expansion in main renov table
@@ -2242,6 +2239,7 @@ function delFloor(fl){
 
 // ══════════ CELL MODAL ══════════
 let _fl='',_tid='',_unit='',_sub='';
+let _noteOrigin=''; // 'matrix' or 'subEdit' — track where the user came from
 
 function openCell(fl,tid){_fl=fl;_tid=tid;renderCellMatrix();}
 
@@ -2429,10 +2427,19 @@ function delUnit(i){
 }
 
 // ══════════ NOTES ══════════
-function openNotes(unit,sub){_unit=unit;_sub=sub;renderNotesView();}
+function openNotes(unit,sub){_unit=unit;_sub=sub;_noteOrigin='matrix';renderNotesView();}
+
+// Smart back: route to the screen the user came from
+function goBackFromNotePhoto(){
+  if(_noteOrigin==='subEdit'){
+    renderSubEditView();
+  }else{
+    renderCellMatrix();
+  }
+}
 
 function openCellPhotos(unit,sub){
-  _unit=unit;_sub=sub;renderCellPhotosView();
+  _unit=unit;_sub=sub;_noteOrigin='matrix';renderCellPhotosView();
 }
 function renderCellPhotosView(){
   const cell=ensureCell(_fl,_tid);
@@ -2455,7 +2462,7 @@ function renderCellPhotosView(){
   );
 
   let h=`<div class="f ai g2 mt2" style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bg3);">
-    <button class="btn bs bsm" onclick="renderCellMatrix()">← 回矩陣</button>
+    <button class="btn bs bsm" onclick="goBackFromNotePhoto()">← 上一頁</button>
     <div style="font-size:13px;color:var(--mut);">
       <b style="color:#b45309;">${esc(_fl)} · ${esc(trName)}</b> / 
       <span style="color:#1e40af;">${esc(_unit)}</span> × 
@@ -2498,7 +2505,7 @@ function renderNotesView(){
   const trName=tr?tr.name:'';
 
   let h=`<div class="f ai g2 mt2" style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--bg3);">
-    <button class="btn bs bsm" onclick="renderCellMatrix()">← 回矩陣</button>
+    <button class="btn bs bsm" onclick="goBackFromNotePhoto()">← 上一頁</button>
     <div style="font-size:13px;color:var(--mut);">
       <b style="color:#b45309;">${esc(_fl)} · ${esc(trName)}</b> / 
       <span style="color:#1e40af;font-weight:600;">${esc(_unit)}</span> × 
