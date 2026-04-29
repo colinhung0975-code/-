@@ -6,6 +6,25 @@
 <title>工程進度管理系統 </title>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<!-- SheetJS: try cdnjs first, fall back to unpkg, then cdn.sheetjs.com -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+  onerror="loadXlsxFallback()"></script>
+<script>
+function loadXlsxFallback(){
+  if(window.XLSX)return;
+  console.warn('cdnjs SheetJS failed, trying unpkg...');
+  const s=document.createElement('script');
+  s.src='https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
+  s.onerror=()=>{
+    console.warn('unpkg failed, trying jsdelivr...');
+    const s2=document.createElement('script');
+    s2.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s2.onerror=()=>console.error('All SheetJS CDNs failed!');
+    document.head.appendChild(s2);
+  };
+  document.head.appendChild(s);
+}
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -251,6 +270,60 @@ body{background:var(--bg);color:var(--txt);
 #lb .lbinfo{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
   background:rgba(0,0,0,.7);color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;}
 
+/* ─────── Three-Week Schedule (Gantt) ─────── */
+.sched-empty{text-align:center;padding:48px 24px;background:#fff;border-radius:8px;
+  border:2px dashed #cbd5e1;color:#475569;}
+.sched-empty .em-icon{font-size:48px;margin-bottom:12px;opacity:.6;}
+.sched-empty h3{color:#0f172a;margin-bottom:8px;font-size:16px;}
+.sched-empty p{font-size:13px;color:#475569;line-height:1.7;margin-bottom:14px;}
+
+.sched-meta{background:#fff;border-radius:8px;padding:10px 14px;margin-bottom:10px;
+  border:1px solid #e2e8f0;display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.sched-meta .meta-item{font-size:12px;color:#475569;}
+.sched-meta .meta-item b{color:#0f172a;}
+
+.sched-wrap{background:#fff;border-radius:8px;border:1px solid #e2e8f0;overflow:auto;}
+.sched-tb{border-collapse:collapse;font-size:11px;width:100%;}
+.sched-tb th,.sched-tb td{border:1px solid #e2e8f0;padding:4px 6px;text-align:center;
+  white-space:nowrap;}
+.sched-tb th{background:#f1f5f9;color:#0f172a;font-weight:700;font-size:11px;
+  position:sticky;top:0;z-index:5;}
+.sched-tb th.cat-h{width:60px;background:#e2e8f0;}
+.sched-tb th.proj-h{width:200px;background:#e2e8f0;text-align:left;padding-left:10px;}
+.sched-tb th.dr-h{width:78px;}
+.sched-tb th.days-h{width:48px;background:#fff7ed;color:#9a3412;}
+.sched-tb th.date-h{min-width:32px;padding:4px 2px;font-size:10px;}
+.sched-tb th.date-h.today{background:#fef3c7;color:#92400e;}
+.sched-tb th.date-h.weekend{background:#fafafa;color:#94a3b8;}
+.sched-tb th.dow-h{font-size:10px;font-weight:600;color:#475569;background:#fff;}
+.sched-tb th.dow-h.today{background:#fef3c7;color:#92400e;}
+.sched-tb th.dow-h.weekend{color:#94a3b8;}
+
+.sched-tb td.cat-cell{background:#fef3c7;color:#92400e;font-weight:700;
+  writing-mode:vertical-rl;text-orientation:upright;font-size:12px;width:36px;}
+.sched-tb td.proj-cell{text-align:left;padding:4px 10px;color:#0f172a;
+  font-weight:500;background:#fafafa;}
+.sched-tb td.dt-cell{font-size:10px;color:#475569;background:#fafafa;}
+.sched-tb td.days-cell{font-size:11px;color:#9a3412;background:#fff7ed;font-weight:600;}
+.sched-tb td.day-cell{padding:0;height:28px;width:32px;background:#fff;}
+.sched-tb td.day-cell.weekend{background:#fafafa;}
+.sched-tb td.day-cell.today{background:#fef3c7;}
+.sched-tb td.day-cell.active{background:#0066cc;}
+.sched-tb td.day-cell.active.today{background:#0050a0;}
+.sched-tb tr.subhdr td{background:#fff7ed;color:#9a3412;text-align:left;
+  padding:6px 12px;font-weight:700;}
+
+.sheet-pick-list{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;}
+.sheet-pick-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:#fff;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;
+  transition:background .12s,border-color .12s;}
+.sheet-pick-item:hover{background:#eff6ff;border-color:#60a5fa;}
+.sheet-pick-item .spi-name{flex:1;font-weight:600;color:#0f172a;font-size:14px;}
+.sheet-pick-item .spi-info{font-size:11px;color:#475569;}
+.sheet-pick-item.recommended{background:#dbeafe;border-color:#2563eb;}
+.sheet-pick-item.recommended::before{content:'⭐';margin-right:4px;}
+
+
 /* Print: photos */
 @media print{
   body.print-renov .ph,body.print-cell .ph{
@@ -356,6 +429,19 @@ body{background:var(--bg);color:var(--txt);
   body.print-cell .prtnotes .pnote{background:#f9fafb !important;border:1px solid #d1d5db !important;
     border-radius:4px;padding:5px 7px;margin-bottom:5px;color:#111 !important;font-size:11px;
     page-break-inside:avoid;}
+
+  /* ───── PRINT THREE-WEEK SCHEDULE ───── */
+  body.print-sched #page-struct{display:flex !important;height:auto !important;overflow:visible !important;}
+  body.print-sched .phdr{display:none !important;}
+  body.print-sched .sbdy{overflow:visible !important;padding:0 !important;background:white !important;}
+  body.print-sched .sched-meta{border:1px solid #6b7280 !important;page-break-inside:avoid;}
+  body.print-sched .sched-wrap{border:1px solid #6b7280 !important;}
+  body.print-sched .sched-tb{font-size:9px !important;width:100% !important;}
+  body.print-sched .sched-tb th,body.print-sched .sched-tb td{
+    border-color:#6b7280 !important;padding:2px 3px !important;}
+  body.print-sched .sched-tb th.proj-h{width:120px !important;}
+  body.print-sched .sched-tb td.proj-cell{font-size:9px !important;padding:3px 6px !important;}
+  body.print-sched .sched-tb td.day-cell.active{background:#0066cc !important;}
 }
 </style>
 </head>
@@ -447,7 +533,7 @@ body{background:var(--bg);color:var(--txt);
 
   <div class="nbts">
     <button class="nbtn" style="background:linear-gradient(135deg,#1d4ed8,#1e40af);"
-      onclick="go('struct')">🏗️&nbsp; 主結構</button>
+      onclick="go('struct')">📅&nbsp; 三週進度表</button>
     <button class="nbtn" style="background:linear-gradient(135deg,#0f766e,#0d9488);"
       onclick="go('renov','indoor')">🔨&nbsp; 室內裝修</button>
     <button class="nbtn" style="background:linear-gradient(135deg,#b45309,#d97706);"
@@ -482,16 +568,15 @@ body{background:var(--bg);color:var(--txt);
 <div id="page-struct" class="page">
   <div class="phdr">
     <button class="bback" onclick="go('home')">← 返回</button>
-    <h1>主結構進度表</h1>
+    <h1>📅 三週進度表</h1>
     <span id="sinf" style="color:var(--dim);font-size:12px;"></span>
     <div class="mla f g2">
-      <button class="btn bsm" style="background:#1e3a8a;color:#93c5fd;border:none;border-radius:6px;cursor:pointer;font-family:inherit;"
-        onclick="scrollToToday()">📍 今天</button>
-      <button class="btn bp bsm" onclick="openAddItem()">＋ 新增項目</button>
+      <button class="btn bp bsm" onclick="openExcelImport()">📤 上傳 Excel</button>
+      <button class="btn bs bsm" onclick="printSchedule()">📄 匯出 PDF</button>
     </div>
   </div>
-  <div class="sbdy" id="sbdy">
-    <table id="stb" class="gtb"></table>
+  <div class="sbdy" id="sbdy" style="padding:14px;background:#f8fafc;">
+    <div id="schedHost"></div>
   </div>
 </div>
 
@@ -567,6 +652,7 @@ const mkRenov=(trades,units,unitLabel)=>({
 const DEF={
   todos:[],
   others:[],
+  schedule:null,  // {sheetName, importedAt, importedBy, items:[{cat,seq,name,start,end,days}], dates:[...]}
   renov_indoor:mkRenov([
     {id:'ti1',name:'泥作',   subs:['打底','粉刷','貼磚']},
     {id:'ti2',name:'輕隔間', subs:['骨架','封板','收邊']},
@@ -2578,144 +2664,383 @@ async function delNote(nid){
   }
 }
 
-// ══════════ STRUCTURE ══════════
-function getCols(){
-  const cs=[];
-  S.struct.items.forEach(it=>{
-    cs.push({type:'item',id:it.id,name:it.name,start:it.startDate,end:it.endDate,exp:it.expanded});
-    if(it.expanded)it.floors.forEach(fl=>
-      cs.push({type:'fl',id:fl.id,name:fl.name,start:fl.startDate,end:fl.endDate,iid:it.id}));
-  });
-  return cs;
-}
-function getRange(){
-  if(!S.struct.items.length)return{minD:today(),maxD:addD(today(),30)};
-  let mn='9999-99',mx='0000-00';
-  S.struct.items.forEach(it=>{
-    if(it.startDate<mn)mn=it.startDate;
-    if(it.endDate>mx)mx=it.endDate;
-  });
-  return{minD:mn,maxD:mx};
-}
-function getDts(mn,mx){const ds=[];let c=mn;while(c<=mx){ds.push(c);c=addD(c,1);}return ds;}
-
+// ══════════ THREE-WEEK SCHEDULE (Excel Import) ══════════
 function renderStruct(){
-  const cols=getCols();
-  const{minD,maxD}=getRange();
-  const dates=getDts(minD,maxD);
-  const td=today();
-  document.getElementById('sinf').textContent=`${S.struct.items.length} 個項目 • ${dates.length} 天`;
+  const sched=S.schedule;
+  const host=document.getElementById('schedHost');
+  const inf=document.getElementById('sinf');
 
-  let h=`<thead><tr><th class="gcn">日期 (週)</th>`;
-  cols.forEach(c=>{
-    const dur=diffD(c.start,c.end)+1;
-    if(c.type==='item'){
-      h+=`<th class="gih" onclick="togItem('${c.id}')" style="cursor:pointer;">
-        <div style="color:#93c5fd;font-weight:700;font-size:12px;">${c.exp?'▲ ':'▼ '}${esc(c.name)}</div>
-        <div style="color:var(--dim);font-size:9px;margin-top:2px;">${fmtS(c.start)}～${fmtS(c.end)}</div>
-        <div style="color:#475569;font-size:9px;">${dur}天</div>
-        <div style="display:flex;gap:3px;justify-content:center;margin-top:3px;">
-          <button class="bd" onclick="event.stopPropagation();openAddFlItem('${c.id}')">+樓層</button>
-          <button class="bd" onclick="event.stopPropagation();delItem('${c.id}')">刪</button>
-        </div></th>`;
-    }else{
-      h+=`<th class="gfh">
-        <div style="color:#7dd3fc;font-weight:700;">${esc(c.name)}</div>
-        <div style="color:var(--dim);font-size:9px;">${fmtS(c.start)}～${fmtS(c.end)}</div>
-        <div style="color:#475569;font-size:9px;">${dur}天</div>
-        <button class="bd" style="margin-top:3px;" onclick="delFlItem('${c.iid}','${c.id}')">刪</button>
-      </th>`;
-    }
+  if(!sched||!sched.items||!sched.items.length){
+    inf.textContent='尚未上傳進度表';
+    host.innerHTML=`<div class="sched-empty">
+      <div class="em-icon">📊</div>
+      <h3>尚未上傳三週進度表</h3>
+      <p>點右上角「📤 上傳 Excel」匯入您的工程三週進度表 .xls / .xlsx 檔案。<br>
+         系統會自動解析工項、起訖日期、進度色塊。</p>
+      <button class="btn bp" style="padding:11px 24px;font-size:14px;" onclick="openExcelImport()">📤 立即上傳 Excel</button>
+    </div>`;
+    return;
+  }
+
+  inf.textContent=`${sched.items.length} 個工項 · 來源：${sched.sheetName}`;
+
+  // Build the gantt
+  const dates=sched.dates||[];
+  const td=today();
+
+  let h=`<div class="sched-meta">
+    <div class="meta-item">📋 <b>來源分頁</b>：${esc(sched.sheetName)}</div>
+    <div class="meta-item">📅 <b>區間</b>：${dates.length?fmtS(dates[0])+' ～ '+fmtS(dates[dates.length-1])+' （'+dates.length+' 天）':'—'}</div>
+    <div class="meta-item">👤 <b>上傳者</b>：${esc(sched.importedBy||'匿名')}</div>
+    <div class="meta-item">🕐 <b>時間</b>：${esc(fmtDT(sched.importedAt))}</div>
+    <div style="margin-left:auto;">
+      <button class="btn bs bsm" onclick="clearSchedule()" style="color:#dc2626;">🗑 清除</button>
+    </div>
+  </div>
+
+  <div class="sched-wrap"><table class="sched-tb">
+    <thead>
+      <tr>
+        <th class="cat-h" rowspan="2">類別</th>
+        <th class="proj-h" rowspan="2">工程項目</th>
+        <th class="dr-h" colspan="2">日期</th>
+        <th class="days-h" rowspan="2">天數</th>`;
+  dates.forEach(d=>{
+    const dt=toDt(d),dow=dt.getDay();
+    const isWk=dow===0||dow===6;
+    const isTd=d===td;
+    const cls=`date-h${isTd?' today':''}${isWk?' weekend':''}`;
+    h+=`<th class="${cls}">${dt.getMonth()+1}/${dt.getDate()}</th>`;
+  });
+  h+=`</tr><tr>
+        <th class="dr-h">開始</th>
+        <th class="dr-h">結束</th>`;
+  dates.forEach(d=>{
+    const dt=toDt(d),dow=dt.getDay();
+    const isWk=dow===0||dow===6;
+    const isTd=d===td;
+    const cls=`dow-h${isTd?' today':''}${isWk?' weekend':''}`;
+    h+=`<th class="${cls}">${DOW[dow]}</th>`;
   });
   h+=`</tr></thead><tbody>`;
 
-  let pm='';
-  dates.forEach(dt=>{
-    const d=toDt(dt),dow=d.getDay();
-    const ym=dt.slice(0,7);
-    const wk=dow===0||dow===6;
-    const isTd=dt===td;
-    if(ym!==pm){
-      pm=ym;const[y,m]=ym.split('-');
-      h+=`<tr class="mrow"><td colspan="${1+cols.length}">── ${y}年${+m}月 ──</td></tr>`;
+  let curCat='';
+  sched.items.forEach((it,idx)=>{
+    // Show category subheader when changes
+    if(it.cat&&it.cat!==curCat){
+      curCat=it.cat;
+      h+=`<tr class="subhdr"><td colspan="${5+dates.length}">▸ ${esc(it.cat)}</td></tr>`;
     }
-    const rc=isTd?'tdr':wk?'wkr':'';
-    h+=`<tr class="${rc}"${isTd?' id="tdr"':''}>
-      <td class="gdc">${fmtS(dt)}&nbsp;<span style="color:${isTd?'#93c5fd':wk?'#374151':'#334155'};">(${DOW[dow]})</span>${isTd?'&nbsp;<span style="font-size:8px;color:#60a5fa;">◀</span>':''}</td>`;
-    cols.forEach(c=>{
-      const act=dt>=c.start&&dt<=c.end;
-      const bg=act?(c.type==='item'?'background:#1d4ed8;':'background:#0891b2;'):'';
-      h+=`<td style="${bg}min-width:96px;"></td>`;
+    h+=`<tr>
+      <td class="cat-cell">${esc(it.cat||'').slice(0,2)}</td>
+      <td class="proj-cell">${esc(it.name||'')}</td>
+      <td class="dt-cell">${esc(fmtROC(it.start))}</td>
+      <td class="dt-cell">${esc(fmtROC(it.end))}</td>
+      <td class="days-cell">${it.days||'—'}</td>`;
+    dates.forEach(d=>{
+      const dt=toDt(d),dow=dt.getDay();
+      const isWk=dow===0||dow===6;
+      const isTd=d===td;
+      const active=it.start&&it.end&&d>=it.start&&d<=it.end;
+      const cls=`day-cell${isTd?' today':''}${isWk?' weekend':''}${active?' active':''}`;
+      h+=`<td class="${cls}"></td>`;
     });
     h+=`</tr>`;
   });
-  h+=`</tbody>`;
-  document.getElementById('stb').innerHTML=h;
+  h+=`</tbody></table></div>`;
+  host.innerHTML=h;
 
-  setTimeout(()=>{const el=document.getElementById('tdr');
-    if(el)el.scrollIntoView({block:'center',behavior:'smooth'});},150);
+  // Scroll to today column if exists
+  setTimeout(()=>{
+    const todayCol=host.querySelector('.date-h.today');
+    if(todayCol)todayCol.scrollIntoView({inline:'center',behavior:'smooth',block:'nearest'});
+  },200);
 }
-function scrollToToday(){const el=document.getElementById('tdr');
-  if(el)el.scrollIntoView({block:'center',behavior:'smooth'});}
-function togItem(id){const it=S.struct.items.find(i=>i.id===id);
-  if(it){it.expanded=!it.expanded;save();renderStruct();}}
-function delItem(id){
-  if(!confirm('確定刪除此工程項目？'))return;
-  S.struct.items=S.struct.items.filter(i=>i.id!==id);save();renderStruct();}
-function delFlItem(iid,fid){
-  const it=S.struct.items.find(i=>i.id===iid);
-  if(it){it.floors=it.floors.filter(f=>f.id!==fid);save();renderStruct();}}
 
-function openAddItem(){
-  const td=today();
-  openModal('新增工程項目',`<div class="f fc g3">
-    <label class="lbl">項目名稱 <input id="min" class="inp" placeholder="例：外牆防水工程"></label>
-    <label class="lbl">開始日期 <input type="date" id="mis" class="inp" value="${td}" oninput="calcDur()"></label>
-    <label class="lbl">結束日期 <input type="date" id="mie" class="inp" value="${addD(td,60)}" oninput="calcDur()"></label>
-    <div id="mdur" style="font-size:12px;color:var(--dim);">共 61 天</div>
-    <button class="btn bp" style="padding:10px;" onclick="doAddItem()">確認新增</button>
-  </div>`);
+// Format YYYY-MM-DD as ROC date 民國年/月/日
+function fmtROC(s){
+  if(!s)return '';
+  const d=toDt(s);
+  const y=d.getFullYear()-1911;
+  return `${y}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 }
-function calcDur(){
-  const s=document.getElementById('mis')?.value;
-  const e=document.getElementById('mie')?.value;
-  const el=document.getElementById('mdur');
-  if(el&&s&&e&&s<=e)el.textContent=`共 ${diffD(s,e)+1} 天`;
-  else if(el)el.textContent='（結束日期需晚於開始日期）';
+
+function clearSchedule(){
+  if(!confirm('確定清除目前的進度表？此動作不會影響 Excel 原檔。'))return;
+  S.schedule=null;save();renderStruct();
 }
-function doAddItem(){
-  const n=document.getElementById('min').value.trim();
-  const s=document.getElementById('mis').value;
-  const e=document.getElementById('mie').value;
-  if(!n||!s||!e||s>e){alert('請填寫完整資料');return;}
-  S.struct.items.push({id:uid(),name:n,startDate:s,endDate:e,expanded:false,floors:[]});
-  save();fclose();renderStruct();
+
+// ══════════ EXCEL IMPORT ══════════
+function openExcelImport(){
+  const xlsxReady=typeof XLSX!=='undefined';
+  const statusBar=xlsxReady
+    ? `<div style="font-size:11px;color:#16a34a;background:#f0fdf4;padding:6px 10px;border-radius:4px;border-left:3px solid #16a34a;">✓ Excel 解析函式庫已載入完成</div>`
+    : `<div style="font-size:11px;color:#b45309;background:#fffbeb;padding:6px 10px;border-radius:4px;border-left:3px solid #b45309;">⏳ Excel 解析函式庫載入中... 若 5 秒後仍提示未載入，請重新整理頁面</div>`;
+
+  const body=`<div class="f fc g3">
+    <div style="font-size:12px;color:var(--mut);line-height:1.65;
+      padding:10px 12px;background:#eff6ff;border-radius:6px;border-left:3px solid #2563eb;">
+      <b style="color:#1e40af;">📋 上傳 Excel 進度表</b><br>
+      支援 .xls / .xlsx 檔案。系統會自動解析包含「<b>工程項目、開始日期、結束日期</b>」欄位的甘特圖。
+      <br><br>
+      <b style="color:#92400e;">適用格式：</b><br>
+      • 第 4 列為標題（類別、項次、工程項目、開始、結束、天數，後面跟日期）<br>
+      • 第 5 列為星期（一、二、三...）<br>
+      • 第 6 列開始為資料
+    </div>
+
+    ${statusBar}
+
+    <input type="file" id="xlsFile" accept=".xls,.xlsx,.xlsm" style="display:none;">
+    <button class="btn bp" style="padding:14px;font-size:15px;" onclick="document.getElementById('xlsFile').click()">
+      📁 選擇 Excel 檔案
+    </button>
+
+    <div id="xlsStatus" style="font-size:12px;color:var(--mut);text-align:center;min-height:18px;"></div>
+  </div>`;
+
+  openModal('📤 上傳 Excel 進度表',body);
+  document.getElementById('xlsFile').addEventListener('change',handleXlsFile);
 }
-function openAddFlItem(iid){
-  const it=S.struct.items.find(i=>i.id===iid);if(!it)return;
-  openModal('新增樓層',`<div class="f fc g3">
-    <label class="lbl">樓層名稱 <input id="mfln" class="inp" placeholder="例：6F"></label>
-    <label class="lbl">開始日期 <input type="date" id="mfls" class="inp" value="${it.startDate}" oninput="calcFlDur()"></label>
-    <label class="lbl">結束日期 <input type="date" id="mfle" class="inp" value="${it.endDate}" oninput="calcFlDur()"></label>
-    <div id="mfld" style="font-size:12px;color:var(--dim);">共 ${diffD(it.startDate,it.endDate)+1} 天</div>
-    <button class="btn bp" style="padding:10px;" onclick="doAddFlItem('${esc(iid)}')">確認新增</button>
-  </div>`);
+
+function handleXlsFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const status=document.getElementById('xlsStatus');
+
+  if(typeof XLSX==='undefined'){
+    status.innerHTML='⚠️ Excel 解析函式庫尚未載入完成<br><small>請稍候 5 秒後再試一次，或檢查網路連線</small>';
+    status.style.color='#dc2626';
+    // Try loading again
+    if(typeof loadXlsxFallback==='function')loadXlsxFallback();
+    return;
+  }
+
+  status.textContent='⏳ 讀取檔案中...';
+  status.style.color='#2563eb';
+
+  const reader=new FileReader();
+  reader.onload=evt=>{
+    try{
+      const data=new Uint8Array(evt.target.result);
+      const wb=XLSX.read(data,{type:'array',cellDates:true});
+      status.textContent=`✓ 讀取成功，找到 ${wb.SheetNames.length} 個分頁`;
+      status.style.color='#16a34a';
+      setTimeout(()=>showSheetPicker(wb),300);
+    }catch(err){
+      console.error(err);
+      status.textContent='✗ 讀取失敗：'+err.message;
+      status.style.color='#dc2626';
+    }
+  };
+  reader.onerror=()=>{
+    status.textContent='✗ 檔案讀取錯誤';
+    status.style.color='#dc2626';
+  };
+  reader.readAsArrayBuffer(file);
 }
-function calcFlDur(){
-  const s=document.getElementById('mfls')?.value;
-  const e=document.getElementById('mfle')?.value;
-  const el=document.getElementById('mfld');
-  if(el&&s&&e&&s<=e)el.textContent=`共 ${diffD(s,e)+1} 天`;
+
+// Try to extract date from sheet name (e.g., "114.06.05" or "115.05.03")
+function parseSheetDate(name){
+  const m=name.match(/^(\d{2,3})[.\-](\d{1,2})[.\-](\d{1,2})/);
+  if(!m)return null;
+  const y=parseInt(m[1])+1911;
+  return `${y}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
 }
-function doAddFlItem(iid){
-  const n=document.getElementById('mfln').value.trim();
-  const s=document.getElementById('mfls').value;
-  const e=document.getElementById('mfle').value;
-  if(!n||!s||!e||s>e){alert('請填寫完整資料');return;}
-  const it=S.struct.items.find(i=>i.id===iid);if(!it)return;
-  it.floors.push({id:uid(),name:n,startDate:s,endDate:e});
-  it.expanded=true;save();fclose();renderStruct();
+
+function showSheetPicker(wb){
+  // Build list with parsed dates, sorted newest first
+  const sheets=wb.SheetNames.map(name=>({name,date:parseSheetDate(name)}));
+  // Sort: dated sheets first (newest), then undated
+  const sorted=sheets.slice().sort((a,b)=>{
+    if(a.date&&b.date)return b.date.localeCompare(a.date);
+    if(a.date)return -1;
+    if(b.date)return 1;
+    return 0;
+  });
+  const recommended=sorted.find(s=>s.date);
+
+  let h=`<div style="font-size:12px;color:var(--mut);line-height:1.6;
+    padding:10px 12px;background:#eff6ff;border-radius:6px;border-left:3px solid #2563eb;margin-bottom:10px;">
+    請選擇要匯入的分頁。系統已依日期排序，<b style="color:#2563eb;">⭐ 為最新版本</b>。
+  </div>
+  <div class="sheet-pick-list">`;
+
+  sorted.forEach(s=>{
+    const isRec=recommended&&s.name===recommended.name;
+    const dateStr=s.date?` · 對應日期 ${s.date}`:'';
+    h+=`<div class="sheet-pick-item ${isRec?'recommended':''}" onclick="pickSheet('${esc(s.name)}')">
+      <div class="spi-name">${esc(s.name)}</div>
+      <div class="spi-info">${dateStr}</div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  openModal('📋 選擇要匯入的分頁',h,true);
+
+  // Stash workbook for later
+  window._pendingWb=wb;
 }
+
+function pickSheet(sheetName){
+  const wb=window._pendingWb;
+  if(!wb)return;
+  try{
+    parseAndImportSheet(wb,sheetName);
+    fclose();
+    setTimeout(()=>{
+      alert(`✓ 已成功匯入「${sheetName}」進度表`);
+      renderStruct();
+    },100);
+  }catch(err){
+    console.error(err);
+    alert('解析失敗：'+err.message+'\n\n請確認 Excel 格式符合說明');
+  }finally{
+    delete window._pendingWb;
+  }
+}
+
+function parseAndImportSheet(wb,sheetName){
+  const sheet=wb.Sheets[sheetName];
+  if(!sheet)throw new Error('分頁不存在');
+  // Convert to AOA (array of arrays)
+  // raw:true keeps Date objects (cellDates:true above ensures dates are Date objects, not numbers)
+  const aoa=XLSX.utils.sheet_to_json(sheet,{header:1,raw:true,defval:null});
+  if(aoa.length<6)throw new Error('資料列不足，至少需要 6 列');
+
+  // Auto-detect header row by counting valid date cells in candidate rows
+  // Find date columns. Try the standard layout first (col index 6 = G onward),
+  // but also scan the whole header row in case the format differs.
+  const dateCols=[]; // {colIdx, isoDate}
+
+  // Try multiple potential header rows: row 4 (index 3), or row 3, or row 5
+  let hdrRowIdx=3;
+  let bestHdr=[];
+  let bestDateCount=0;
+
+  for(const tryIdx of [3,2,4,1,0]){
+    const r=aoa[tryIdx];
+    if(!r)continue;
+    let cnt=0;
+    for(let c=0;c<r.length;c++){
+      if(extractIsoDate(r[c]))cnt++;
+    }
+    if(cnt>bestDateCount){bestDateCount=cnt;bestHdr=r;hdrRowIdx=tryIdx;}
+  }
+
+  if(bestDateCount===0){
+    throw new Error('找不到日期欄位。請確認 Excel 標題列（通常是第 4 列）有日期欄位（例如 5/5、2026/05/05 等格式）');
+  }
+
+  for(let c=0;c<bestHdr.length;c++){
+    const iso=extractIsoDate(bestHdr[c]);
+    if(iso)dateCols.push({colIdx:c,iso});
+  }
+
+  // Determine where the actual data rows begin (usually 2 rows after header: data starts at hdrRow+2)
+  const dataStartIdx=hdrRowIdx+2;
+  if(aoa.length<=dataStartIdx)throw new Error('找不到資料列');
+
+  // Parse data rows (start from index 5 = Row 6)
+  const items=[];
+  let curCat='';
+  for(let r=dataStartIdx;r<aoa.length;r++){
+    const row=aoa[r]||[];
+    const cat=row[0]; // 類別
+    const seq=row[1]; // 項次
+    const name=row[2]; // 工程項目
+    const startCell=row[3]; // 開始
+    const endCell=row[4]; // 結束
+    const daysCell=row[5]; // 天數
+
+    if(cat&&typeof cat==='string'&&cat.trim()){
+      curCat=cat.trim();
+    }
+    // Skip if no project name AND no seq
+    if(!name||(typeof name==='string'&&!name.trim()))continue;
+
+    const start=parseROCDate(startCell);
+    const end=parseROCDate(endCell);
+    if(!start||!end)continue;  // Skip rows without valid dates
+
+    items.push({
+      cat:curCat,
+      seq:seq,
+      name:String(name).trim(),
+      start,end,
+      days:daysCell
+    });
+  }
+
+  if(!items.length)throw new Error('找不到有效的工項資料');
+
+  // Save
+  S.schedule={
+    sheetName,
+    importedAt:new Date().toISOString(),
+    importedBy:localStorage.getItem('fbUser')||'匿名',
+    dates:dateCols.map(c=>c.iso),
+    items
+  };
+  save();
+}
+
+// Extract ISO date from any cell value (Date object, ROC string, ISO string, Excel serial, M/D string)
+// Returns null if not a valid date.
+function extractIsoDate(v){
+  if(v==null||v==='')return null;
+
+  // Date object (preferred — happens with cellDates:true + raw:true)
+  if(v instanceof Date){
+    if(isNaN(v.getTime()))return null;
+    return toS(v);
+  }
+
+  // String formats
+  if(typeof v==='string'){
+    const s=v.trim();
+    if(!s)return null;
+    // ISO/Western with year: 2026-05-05 or 2026/5/5
+    let m=s.match(/^(\d{4})[\-\/\.](\d{1,2})[\-\/\.](\d{1,2})/);
+    if(m){
+      const y=+m[1],mo=+m[2],d=+m[3];
+      if(mo>=1&&mo<=12&&d>=1&&d<=31)
+        return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    }
+    // ROC year: 115/05/05 or 115.5.5
+    m=s.match(/^(\d{2,3})[\/\.\-](\d{1,2})[\/\.\-](\d{1,2})/);
+    if(m){
+      const y=+m[1]+(+m[1]<200?1911:0);
+      const mo=+m[2],d=+m[3];
+      if(mo>=1&&mo<=12&&d>=1&&d<=31)
+        return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    }
+    // M/D without year (e.g., "5/5") — needs year context, skip here
+    return null;
+  }
+
+  // Number (Excel serial date — days since 1899-12-30)
+  if(typeof v==='number'){
+    // Filter out unreasonable values (must be a sane date range: 1990-2100)
+    if(v<32874||v>73415)return null;
+    const d=new Date(Date.UTC(1899,11,30)+v*86400000);
+    if(isNaN(d.getTime()))return null;
+    return toS(d);
+  }
+
+  return null;
+}
+
+// Parse ROC date "115/05/05" or Date object → "2026-05-05"
+function parseROCDate(v){
+  return extractIsoDate(v);
+}
+
+function printSchedule(){
+  if(!S.schedule||!S.schedule.items.length){alert('請先上傳 Excel 進度表');return;}
+  document.body.classList.add('print-sched');
+  setTimeout(()=>{window.print();},80);
+}
+
 
 // ══════════ PRINT / PDF EXPORT ══════════
 function printRenov(){
@@ -2850,7 +3175,7 @@ function printCell(){
   setTimeout(()=>{window.print();},60);
 }
 window.addEventListener('afterprint',()=>{
-  document.body.classList.remove('print-renov','print-cell');
+  document.body.classList.remove('print-renov','print-cell','print-sched');
   // Clean up filter classes
   document.querySelectorAll('.hide-print').forEach(el=>el.classList.remove('hide-print'));
 });
