@@ -355,21 +355,29 @@ body{background:var(--bg);color:var(--txt);
   .sync-grp .btn{flex-shrink:0;}
 }
 
+/* ─────── Other Tasks (desktop default) ─────── */
+.oth-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;
+  background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;}
+.oth-item.oth-done{background:#f8fafc;}
+.oth-ck-wrap{display:inline-flex;align-items:flex-start;padding-top:3px;flex-shrink:0;}
+.oth-main{flex:1;min-width:0;}
+.oth-photos{margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;}
+.oth-asg-wrap{flex-shrink:0;display:inline-flex;align-items:flex-start;padding-top:2px;}
+.oth-btns{display:inline-flex;gap:1px;flex-shrink:0;}
+
 /* ─────── Mobile Overdue (card layout < 768px) ─────── */
 @media (max-width: 767px) {
   /* Hide table header on mobile */
   #ovdTb thead{display:none;}
   #ovdTb,#ovdTb tbody{display:block;width:100%;}
   #ovdTb tr{
-    display:grid;
-    grid-template-columns:32px 1fr auto;
-    gap:6px;
+    display:block;
     background:#fff;
     border:1px solid #fecaca !important;
-    border-radius:6px;
-    margin-bottom:8px;
-    padding:10px;
-    align-items:start;
+    border-radius:8px;
+    margin-bottom:10px;
+    padding:10px 12px;
+    position:relative;
   }
   #ovdTb td{
     display:block;
@@ -377,26 +385,120 @@ body{background:var(--bg);color:var(--txt);
     border:none !important;
     background:transparent !important;
     text-align:left !important;
+    width:auto !important;
+    margin-bottom:6px;
   }
-  /* Checkbox (col 1) - top-left */
-  #ovdTb td:nth-child(1){grid-column:1;grid-row:1;align-self:center;}
-  /* Content (col 2 = text + photos) - main area */
-  #ovdTb td:nth-child(2){grid-column:2;grid-row:1 / span 3;font-size:13px !important;font-weight:600;}
-  #ovdTb td:nth-child(2) input[type="text"]{font-size:13px !important;font-weight:600 !important;width:100% !important;padding:2px 4px !important;}
-  /* Delete button (col 6) - top-right */
-  #ovdTb td:nth-child(6){grid-column:3;grid-row:1;}
-  /* Date (col 3) - bottom-left after content */
-  #ovdTb td:nth-child(3){grid-column:1 / span 1;grid-row:2;font-size:11px;color:#6b7280;}
-  #ovdTb td:nth-child(3)::before{content:'📅 ';font-size:11px;}
-  #ovdTb td:nth-child(3) input[type="date"]{width:auto !important;font-size:11px !important;color:#0f172a !important;}
-  /* Days delayed (col 4) - bottom-middle */
-  #ovdTb td:nth-child(4){grid-column:2;grid-row:4;font-size:11px !important;text-align:left !important;
-    color:#dc2626 !important;font-weight:700;}
-  #ovdTb td:nth-child(4)::before{content:'⏰ 已延期 ';font-size:11px;color:#7f1d1d;font-weight:600;}
-  /* Assignee (col 5) - below date */
-  #ovdTb td:nth-child(5){grid-column:1 / span 3;grid-row:5;}
-  #ovdTb td:nth-child(5)::before{content:'@';color:#6d28d9;font-weight:700;margin-right:2px;}
-  #ovdTb td:nth-child(5) input{font-size:11px !important;color:#6d28d9 !important;width:auto !important;text-align:left !important;}
+  #ovdTb td:last-child{margin-bottom:0;}
+
+  /* Row 1: checkbox + content + delete (top row, horizontal) */
+  #ovdTb tr{padding-top:14px;}
+  #ovdTb td:nth-child(1){
+    position:absolute;top:12px;left:12px;width:20px !important;
+  }
+  #ovdTb td:nth-child(2){
+    margin-left:30px;margin-right:32px;font-size:13px !important;font-weight:600;
+    padding-bottom:6px !important;border-bottom:1px solid #fee2e2 !important;
+  }
+  #ovdTb td:nth-child(2) input[type="text"]{
+    font-size:13px !important;font-weight:600 !important;width:100% !important;padding:2px 4px !important;
+  }
+  #ovdTb td:nth-child(6){
+    position:absolute;top:6px;right:6px;
+  }
+
+  /* Row 2: date | delay | assignee — equal columns with dividers */
+  #ovdTb td:nth-child(3),
+  #ovdTb td:nth-child(4),
+  #ovdTb td:nth-child(5){
+    display:inline-flex !important;
+    align-items:center;
+    font-size:11px;
+    color:#475569;
+    margin-bottom:0 !important;
+    padding:6px 8px 0 !important;
+    vertical-align:top;
+  }
+  #ovdTb td:nth-child(3){width:auto !important;padding-left:0 !important;}
+  #ovdTb td:nth-child(3)::before{content:'📅';margin-right:4px;}
+  #ovdTb td:nth-child(3) input[type="date"]{
+    width:auto !important;font-size:11px !important;color:#0f172a !important;
+    border:1px solid transparent !important;background:transparent !important;
+    padding:1px 3px !important;
+  }
+  #ovdTb td:nth-child(4){
+    color:#dc2626 !important;font-weight:700 !important;
+    margin-left:8px !important;
+  }
+  #ovdTb td:nth-child(4)::before{content:'⏰ 延期';margin-right:4px;color:#7f1d1d;font-weight:600;}
+  #ovdTb td:nth-child(5){
+    margin-left:auto !important;float:right;
+  }
+  #ovdTb td:nth-child(5)::before{content:'@';color:#6d28d9;font-weight:700;margin-right:2px;font-size:13px;}
+  #ovdTb td:nth-child(5) input{
+    font-size:11px !important;color:#6d28d9 !important;font-weight:600 !important;
+    width:auto !important;max-width:80px !important;text-align:left !important;
+    border:1px solid transparent !important;background:transparent !important;padding:1px 3px !important;
+  }
+
+  /* Other Tasks: same card layout as overdue */
+  .oth-item{
+    display:block !important;
+    padding:10px 12px !important;
+    position:relative;
+    padding-top:14px !important;
+  }
+  .oth-ck-wrap{
+    position:absolute;top:12px;left:12px;width:20px;
+  }
+  .oth-main{
+    margin-left:30px !important;margin-right:32px !important;
+    padding-bottom:6px;border-bottom:1px solid #e2e8f0;margin-bottom:6px;
+  }
+  .oth-main .oth-tx{font-size:13px !important;font-weight:600 !important;}
+  .oth-asg-wrap{
+    display:inline-flex !important;float:right;padding-top:0 !important;
+  }
+  .oth-asg-wrap::before{content:'@';color:#6d28d9;font-weight:700;margin-right:2px;font-size:13px;align-self:center;}
+  .oth-asg{font-size:11px !important;width:auto !important;max-width:80px !important;}
+  .oth-btns{
+    display:inline-flex !important;gap:2px;
+  }
+
+  /* Weekly Todo: content top, buttons bottom */
+  .ti{
+    display:block !important;
+    padding:8px;
+    background:#fff;
+    border:1px solid #e2e8f0;
+    border-radius:6px;
+    margin-bottom:6px;
+    position:relative;
+  }
+  .ti .ck{
+    position:absolute;top:9px;left:8px;
+  }
+  .ti .tx{
+    display:block !important;
+    margin-left:24px;
+    margin-bottom:6px;
+    padding-bottom:5px;
+    border-bottom:1px solid #f1f5f9;
+    font-size:12px !important;
+  }
+  .ti .acg{
+    display:flex !important;
+    justify-content:flex-end;
+    gap:4px;
+    width:100%;
+  }
+  .ti .ac{
+    width:30px !important;height:28px !important;
+    font-size:14px !important;
+  }
+  .ti .ac:hover{background:#f1f5f9;}
+  /* Photos area for todo items on mobile */
+  .ti+.phs{margin-left:0 !important;margin-top:-2px !important;margin-bottom:8px !important;
+    padding:0 8px;}
 }
 
 /* ─────── Bigger Scrollbar (desktop) ─────── */
@@ -1681,25 +1783,27 @@ function renderOthers(){
     regPhotoHandle(handle,()=>S.others.find(x=>x.id===o.id),()=>renderOthers());
     const cl=o.done?'#94a3b8':'#0f172a';
     const dk=o.done?'line-through':'none';
-    return `<div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;
-      background:${o.done?'#f8fafc':'#fff'};border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;">
-      <input type="checkbox"${o.done?' checked':''} onchange="togOther('${o.id}')"
-        style="margin-top:3px;accent-color:#3b82f6;cursor:pointer;width:14px;height:14px;flex-shrink:0;">
-      <div style="flex:1;min-width:0;">
+    return `<div class="oth-item ${o.done?'oth-done':''}">
+      <span class="oth-ck-wrap">
+        <input type="checkbox"${o.done?' checked':''} onchange="togOther('${o.id}')"
+          style="accent-color:#3b82f6;cursor:pointer;width:14px;height:14px;">
+      </span>
+      <div class="oth-main">
         <input type="text" value="${esc(o.text)}" onblur="updOther('${o.id}','text',this.value)"
-          style="width:100%;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;
-          font-family:inherit;font-size:13px;color:${cl};text-decoration:${dk};outline:none;font-weight:500;"
+          class="oth-tx"
+          style="color:${cl};text-decoration:${dk};font-family:inherit;font-size:13px;font-weight:500;width:100%;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;outline:none;"
           onfocus="this.style.borderColor='#2563eb';this.style.background='#eff6ff';this.style.textDecoration='none';this.style.color='#0f172a';"
           onblur="this.style.borderColor='transparent';this.style.background='transparent';this.style.textDecoration='${dk}';this.style.color='${cl}';updOther('${o.id}','text',this.value);">
-        ${o.assignee?`<span style="display:inline-block;font-size:10px;color:#6d28d9;background:#ede9fe;padding:1px 6px;border-radius:3px;margin-top:3px;">@${esc(o.assignee)}</span>`:''}
-        ${np?`<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">${o.photos.map(p=>`<div class="ph" style="width:42px;height:42px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}
+        ${np?`<div class="oth-photos">${o.photos.map(p=>`<div class="ph" style="width:42px;height:42px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}
       </div>
-      <input type="text" value="${esc(o.assignee||'')}" placeholder="處理人" onblur="updOther('${o.id}','assignee',this.value)"
-        style="width:90px;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;
-        font-family:inherit;font-size:11px;color:#475569;outline:none;text-align:center;flex-shrink:0;"
-        onfocus="this.style.borderColor='#2563eb';this.style.background='#eff6ff';this.style.color='#0f172a';"
-        onblur="this.style.borderColor='transparent';this.style.background='transparent';this.style.color='#475569';updOther('${o.id}','assignee',this.value);">
-      <span style="display:inline-flex;gap:1px;flex-shrink:0;">
+      <span class="oth-asg-wrap">
+        <input type="text" value="${esc(o.assignee||'')}" placeholder="處理人" onblur="updOther('${o.id}','assignee',this.value)"
+          class="oth-asg"
+          style="border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;font-family:inherit;font-size:11px;color:#475569;outline:none;text-align:center;width:90px;"
+          onfocus="this.style.borderColor='#2563eb';this.style.background='#eff6ff';this.style.color='#0f172a';"
+          onblur="this.style.borderColor='transparent';this.style.background='transparent';this.style.color='#475569';updOther('${o.id}','assignee',this.value);">
+      </span>
+      <span class="oth-btns">
         <button class="ac cam ${np?'has':''}" onclick="addPhotoMenu(event,'${handle}',true)" title="拍照">📷</button>
         <button class="ac" onclick="addPhotoMenu(event,'${handle}',false)" title="上傳">📁</button>
         <button class="ac dgr" onclick="delOther('${o.id}')" title="刪除">✕</button>
