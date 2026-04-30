@@ -333,6 +333,72 @@ body{background:var(--bg);color:var(--txt);
 .saf-btn.off{background:#fee2e2;color:#dc2626;}
 #page-safety.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
+/* ─────── Sync Bar Groups ─────── */
+.sync-grp{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+@media (max-width:600px){
+  #syncBar{
+    width:100%;
+    flex-direction:column;
+    align-items:stretch !important;
+    border-radius:12px;
+  }
+  .sync-grp{
+    width:100%;
+    justify-content:flex-start;
+    padding:4px 0;
+  }
+  .sync-grp #syncTxt,
+  .sync-grp #phTxt{
+    flex:1;
+    text-align:left;
+  }
+  .sync-grp .btn{flex-shrink:0;}
+}
+
+/* ─────── Mobile Overdue (card layout < 768px) ─────── */
+@media (max-width: 767px) {
+  /* Hide table header on mobile */
+  #ovdTb thead{display:none;}
+  #ovdTb,#ovdTb tbody{display:block;width:100%;}
+  #ovdTb tr{
+    display:grid;
+    grid-template-columns:32px 1fr auto;
+    gap:6px;
+    background:#fff;
+    border:1px solid #fecaca !important;
+    border-radius:6px;
+    margin-bottom:8px;
+    padding:10px;
+    align-items:start;
+  }
+  #ovdTb td{
+    display:block;
+    padding:0 !important;
+    border:none !important;
+    background:transparent !important;
+    text-align:left !important;
+  }
+  /* Checkbox (col 1) - top-left */
+  #ovdTb td:nth-child(1){grid-column:1;grid-row:1;align-self:center;}
+  /* Content (col 2 = text + photos) - main area */
+  #ovdTb td:nth-child(2){grid-column:2;grid-row:1 / span 3;font-size:13px !important;font-weight:600;}
+  #ovdTb td:nth-child(2) input[type="text"]{font-size:13px !important;font-weight:600 !important;width:100% !important;padding:2px 4px !important;}
+  /* Delete button (col 6) - top-right */
+  #ovdTb td:nth-child(6){grid-column:3;grid-row:1;}
+  /* Date (col 3) - bottom-left after content */
+  #ovdTb td:nth-child(3){grid-column:1 / span 1;grid-row:2;font-size:11px;color:#6b7280;}
+  #ovdTb td:nth-child(3)::before{content:'📅 ';font-size:11px;}
+  #ovdTb td:nth-child(3) input[type="date"]{width:auto !important;font-size:11px !important;color:#0f172a !important;}
+  /* Days delayed (col 4) - bottom-middle */
+  #ovdTb td:nth-child(4){grid-column:2;grid-row:4;font-size:11px !important;text-align:left !important;
+    color:#dc2626 !important;font-weight:700;}
+  #ovdTb td:nth-child(4)::before{content:'⏰ 已延期 ';font-size:11px;color:#7f1d1d;font-weight:600;}
+  /* Assignee (col 5) - below date */
+  #ovdTb td:nth-child(5){grid-column:1 / span 3;grid-row:5;}
+  #ovdTb td:nth-child(5)::before{content:'@';color:#6d28d9;font-weight:700;margin-right:2px;}
+  #ovdTb td:nth-child(5) input{font-size:11px !important;color:#6d28d9 !important;width:auto !important;text-align:left !important;}
+}
+
 /* ─────── Bigger Scrollbar (desktop) ─────── */
 /* Webkit-based browsers: Chrome, Edge, Safari */
 @media (min-width: 768px) {
@@ -529,15 +595,19 @@ body{background:var(--bg);color:var(--txt);
     <div class="dlb">── 工程進度管理系統 ──</div>
     <div id="ddisp" class="dtx"></div>
     <div id="syncBar" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;
-      font-size:11px;padding:5px 12px;border-radius:20px;background:var(--bg2);border:1px solid var(--bg3);flex-wrap:wrap;">
-      <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;"></span>
-      <span id="syncTxt" style="color:var(--mut);">尚未設定雲端同步</span>
-      <button class="btn bs bsm" style="padding:2px 8px;font-size:10px;margin-left:4px;"
-        onclick="openSyncSetup()">⚙️ 同步設定</button>
-      <span id="phDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;margin-left:8px;"></span>
-      <span id="phTxt" style="color:var(--mut);">未設定照片儲存</span>
-      <button class="btn bs bsm" style="padding:2px 8px;font-size:10px;"
-        onclick="openCldSetup()">📷 照片設定</button>
+      font-size:11px;padding:8px 14px;border-radius:14px;background:var(--bg2);border:1px solid var(--bg3);flex-wrap:wrap;justify-content:center;">
+      <span class="sync-grp">
+        <span id="syncDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;flex-shrink:0;"></span>
+        <span id="syncTxt" style="color:var(--mut);">尚未設定雲端同步</span>
+        <button class="btn bs bsm" style="padding:2px 8px;font-size:10px;"
+          onclick="openSyncSetup()">⚙️ 同步設定</button>
+      </span>
+      <span class="sync-grp">
+        <span id="phDot" style="width:8px;height:8px;border-radius:50%;background:#64748b;flex-shrink:0;"></span>
+        <span id="phTxt" style="color:var(--mut);">未設定照片儲存</span>
+        <button class="btn bs bsm" style="padding:2px 8px;font-size:10px;"
+          onclick="openCldSetup()">📷 照片設定</button>
+      </span>
     </div>
   </div>
 
@@ -635,7 +705,7 @@ body{background:var(--bg);color:var(--txt);
   <div class="rbdy">
     <div class="prthdr"><h2 id="prtRH"></h2><div id="prtRD"></div></div>
     <div id="rleg" class="rleg"></div>
-    <div style="overflow-x:auto;">
+    <div id="rtbScroll" style="overflow-x:auto;">
       <table id="rtb" class="rtb"></table>
     </div>
   </div>
@@ -667,7 +737,7 @@ body{background:var(--bg);color:var(--txt);
       <button class="btn bs bsm" onclick="printSafety()">📄 匯出 PDF</button>
     </div>
   </div>
-  <div class="rbdy" style="padding:14px;background:#f8fafc;overflow:auto;">
+  <div class="rbdy" id="safScroll" style="padding:14px;background:#f8fafc;overflow:auto;">
     <div id="safLeg" style="margin-bottom:10px;display:flex;gap:14px;align-items:center;
       font-size:12px;color:var(--mut);flex-wrap:wrap;">
       <b style="color:#0f172a;">圖例：</b>
@@ -1940,6 +2010,21 @@ function renderRenov(){
     <td style="background:var(--bg);border:1px solid var(--bg3);"></td>
   </tr></tbody>`;
   document.getElementById('rtb').innerHTML=h;
+
+  // Restore horizontal scroll position
+  const sc=document.getElementById('rtbScroll');
+  if(sc){
+    const key='renov_scroll_'+_renovKey;
+    const saved=parseInt(sessionStorage.getItem(key))||0;
+    sc.scrollLeft=saved;
+    // Save on scroll (debounced)
+    sc.onscroll=()=>{
+      clearTimeout(sc._scTimer);
+      sc._scTimer=setTimeout(()=>{
+        sessionStorage.setItem(key,sc.scrollLeft);
+      },150);
+    };
+  }
 }
 
 // Open compact editor for ONE sub-item across all units of a floor
@@ -3244,6 +3329,19 @@ function renderSafety(){
     <td style="background:var(--bg);border:1px solid var(--bg3);"></td>
   </tr></tbody>`;
   document.getElementById('safTb').innerHTML=h;
+
+  // Restore horizontal scroll position
+  const sc=document.getElementById('safScroll');
+  if(sc){
+    const saved=parseInt(sessionStorage.getItem('safety_scroll'))||0;
+    sc.scrollLeft=saved;
+    sc.onscroll=()=>{
+      clearTimeout(sc._scTimer);
+      sc._scTimer=setTimeout(()=>{
+        sessionStorage.setItem('safety_scroll',sc.scrollLeft);
+      },150);
+    };
+  }
 }
 
 function togSafCell(fl,iid){
