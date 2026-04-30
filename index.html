@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>工程進度管理系統 </title>
+<title>工程進度管理系統</title>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <!-- SheetJS: try cdnjs first, fall back to unpkg, then cdn.sheetjs.com -->
@@ -37,7 +37,7 @@ body{background:var(--bg);color:var(--txt);
   font-family:'Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif;min-height:100vh;}
 .page{display:none;}
 .page.active{display:block;}
-#page-renov.active,#page-struct.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+#page-renov.active,#page-struct.active,#page-safety.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:var(--bg);}
 ::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px;}
@@ -323,6 +323,16 @@ body{background:var(--bg);color:var(--txt);
 .sheet-pick-item.recommended{background:#dbeafe;border-color:#2563eb;}
 .sheet-pick-item.recommended::before{content:'⭐';margin-right:4px;}
 
+/* ─────── Safety Cell ─────── */
+.saf-cell{padding:0 !important;}
+.saf-btn{width:100%;height:36px;border:none;cursor:pointer;font-size:18px;
+  font-family:inherit;font-weight:700;display:flex;align-items:center;justify-content:center;
+  transition:filter .12s;}
+.saf-btn:hover{filter:brightness(0.95);}
+.saf-btn.on{background:#dcfce7;color:#15803d;}
+.saf-btn.off{background:#fee2e2;color:#dc2626;}
+#page-safety.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+
 
 /* Print: photos */
 @media print{
@@ -442,6 +452,25 @@ body{background:var(--bg);color:var(--txt);
   body.print-sched .sched-tb th.proj-h{width:120px !important;}
   body.print-sched .sched-tb td.proj-cell{font-size:9px !important;padding:3px 6px !important;}
   body.print-sched .sched-tb td.day-cell.active{background:#0066cc !important;}
+
+  /* ───── PRINT SAFETY ───── */
+  body.print-saf #page-safety{display:flex !important;height:auto !important;overflow:visible !important;}
+  body.print-saf .phdr{display:none !important;}
+  body.print-saf .rbdy{overflow:visible !important;padding:0 !important;background:white !important;}
+  body.print-saf #safLeg{border-bottom:2px solid #111 !important;padding-bottom:8px !important;margin-bottom:10px !important;}
+  body.print-saf .rtb{width:100% !important;table-layout:fixed !important;border-collapse:collapse !important;font-size:11px !important;}
+  body.print-saf .rtb th,body.print-saf .rtb td{
+    border-color:#6b7280 !important;padding:4px 3px !important;}
+  body.print-saf .rtb th.tlf{background:#e5e7eb !important;width:120px !important;}
+  body.print-saf .rtb th,body.print-saf .rtb td.tnm{
+    background:#f3f4f6 !important;color:#111 !important;}
+  body.print-saf .saf-btn{background:transparent !important;font-size:14px !important;height:28px !important;}
+  body.print-saf .saf-btn.on{color:#15803d !important;}
+  body.print-saf .saf-btn.off{color:#dc2626 !important;}
+  body.print-saf .dotbtn,body.print-saf .btn{display:none !important;}
+  body.print-saf .rtb thead tr>th:last-child,
+  body.print-saf .rtb tbody tr:last-child,
+  body.print-saf .rtb tbody tr>td:last-child{display:none !important;}
 }
 </style>
 </head>
@@ -538,6 +567,8 @@ body{background:var(--bg);color:var(--txt);
       onclick="go('renov','indoor')">🔨&nbsp; 室內裝修</button>
     <button class="nbtn" style="background:linear-gradient(135deg,#b45309,#d97706);"
       onclick="go('renov','outdoor')">🌳&nbsp; 室外裝修</button>
+    <button class="nbtn" style="background:linear-gradient(135deg,#dc2626,#b91c1c);"
+      onclick="go('safety')">🦺&nbsp; 勞安管制表</button>
   </div>
 </div>
 </div>
@@ -577,6 +608,28 @@ body{background:var(--bg);color:var(--txt);
   </div>
   <div class="sbdy" id="sbdy" style="padding:14px;background:#f8fafc;">
     <div id="schedHost"></div>
+  </div>
+</div>
+
+<!-- ═════════ SAFETY ═════════ -->
+<div id="page-safety" class="page">
+  <div class="phdr">
+    <button class="bback" onclick="go('home')">← 返回</button>
+    <h1>🦺 勞安管制表</h1>
+    <span id="safInf" style="color:var(--dim);font-size:12px;"></span>
+    <div class="mla f g2">
+      <button class="btn bs bsm" onclick="printSafety()">📄 匯出 PDF</button>
+    </div>
+  </div>
+  <div class="rbdy" style="padding:14px;background:#f8fafc;overflow:auto;">
+    <div id="safLeg" style="margin-bottom:10px;display:flex;gap:14px;align-items:center;
+      font-size:12px;color:var(--mut);flex-wrap:wrap;">
+      <b style="color:#0f172a;">圖例：</b>
+      <span><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border:1px solid #16a34a;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>✓ 已設置</span>
+      <span><span style="display:inline-block;width:14px;height:14px;background:#fee2e2;border:1px solid #dc2626;border-radius:3px;vertical-align:middle;margin-right:4px;"></span>✗ 未設置</span>
+      <span style="margin-left:auto;color:var(--dim);">💡 點擊任一格切換狀態</span>
+    </div>
+    <table id="safTb" class="rtb"></table>
   </div>
 </div>
 
@@ -653,6 +706,20 @@ const DEF={
   todos:[],
   others:[],
   schedule:null,  // {sheetName, importedAt, importedBy, items:[{cat,seq,name,start,end,days}], dates:[...]}
+  safety:{
+    floors:['B5','B4','B3','B2','B1','1F','2F','3F','4F','5F','RF'],
+    items:[
+      {id:'sf_handrail',name:'安全護欄'},
+      {id:'sf_net',name:'固定式安全網'},
+      {id:'sf_chute',name:'垃圾斜槽'},
+      {id:'sf_rope',name:'安全母索'},
+      {id:'sf_scaff',name:'施工架'},
+      {id:'sf_panel',name:'臨時電盤'},
+      {id:'sf_light',name:'緊急照明'},
+      {id:'sf_fire',name:'滅火器'}
+    ],
+    cells:{}  // {floor_itemId: true/false}
+  },
   renov_indoor:mkRenov([
     {id:'ti1',name:'泥作',   subs:['打底','粉刷','貼磚']},
     {id:'ti2',name:'輕隔間', subs:['骨架','封板','收邊']},
@@ -768,6 +835,12 @@ function mergeFromCloud(cloudState){
   if(!S.struct)S.struct=JSON.parse(JSON.stringify(DEF.struct));
   if(!S.todos)S.todos=[];
   if(!Array.isArray(S.others))S.others=[];
+  if(!S.safety){S.safety=JSON.parse(JSON.stringify(DEF.safety));}
+  else{
+    if(!Array.isArray(S.safety.floors)||!S.safety.floors.length)S.safety.floors=DEF.safety.floors.slice();
+    if(!Array.isArray(S.safety.items)||!S.safety.items.length)S.safety.items=JSON.parse(JSON.stringify(DEF.safety.items));
+    if(!S.safety.cells)S.safety.cells={};
+  }
   if(!S.renov_indoor.floorUnits)S.renov_indoor.floorUnits={};
   if(!S.renov_outdoor.floorUnits)S.renov_outdoor.floorUnits={};
   try{localStorage.setItem('capp4',JSON.stringify(S));}catch(e){}
@@ -777,6 +850,7 @@ function mergeFromCloud(cloudState){
     if(active.id==='page-home')renderTodos();
     if(active.id==='page-renov')renderRenov();
     if(active.id==='page-struct')renderStruct();
+    if(active.id==='page-safety')renderSafety();
   }
 }
 
@@ -1002,6 +1076,14 @@ function load(){
       S.struct={...DEF.struct,...(S.struct||{})};
       (S.todos||[]).forEach(t=>{if(!('assignee' in t))t.assignee='';});
       if(!Array.isArray(S.others))S.others=[];
+      // Init safety
+      if(!S.safety||typeof S.safety!=='object'){
+        S.safety=JSON.parse(JSON.stringify(DEF.safety));
+      }else{
+        if(!Array.isArray(S.safety.floors)||!S.safety.floors.length)S.safety.floors=DEF.safety.floors.slice();
+        if(!Array.isArray(S.safety.items)||!S.safety.items.length)S.safety.items=JSON.parse(JSON.stringify(DEF.safety.items));
+        if(!S.safety.cells||typeof S.safety.cells!=='object')S.safety.cells={};
+      }
     }
   }catch(e){}
 }
@@ -1311,6 +1393,7 @@ function go(page,arg){
   if(page==='home')  renderHome();
   if(page==='renov') renderRenov();
   if(page==='struct')renderStruct();
+  if(page==='safety')renderSafety();
 }
 
 // ══════════ MODAL ══════════
@@ -3060,6 +3143,192 @@ function printSchedule(){
   setTimeout(()=>{window.print();},80);
 }
 
+// ══════════ SAFETY ══════════
+function renderSafety(){
+  const sf=S.safety;
+  const {floors,items,cells}=sf;
+
+  // Count totals
+  let totalSet=0,totalAll=floors.length*items.length;
+  Object.values(cells).forEach(v=>{if(v)totalSet++;});
+  document.getElementById('safInf').textContent=`${items.length} 項管制 × ${floors.length} 樓 · 已設置 ${totalSet}/${totalAll}（${Math.round(totalSet/totalAll*100)||0}%）`;
+
+  let h=`<thead><tr><th class="tlf">管制項目 ↓ / 樓層 →</th>`;
+  floors.forEach((fl,i)=>{
+    h+=`<th draggable="true"
+      ondragstart="dragStart(event,'safFl',${i})"
+      ondragover="dragOver(event,'safFl',${i})"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,'safFl',${i},S.safety.floors,renderSafety)"
+      ondragend="dragEnd(event)">
+      <div class="hdrow">
+        <span>${esc(fl)}</span>
+        <button class="dotbtn" onclick="openSafFlMenu(event,${i})" title="選項">⋮</button>
+      </div></th>`;
+  });
+  h+=`<th style="background:var(--bg);border:1px solid var(--bg3);padding:6px;">
+    <button class="btn bt bsm" onclick="openAddSafFl()">＋ 樓層</button></th>
+  </tr></thead><tbody>`;
+
+  items.forEach((it,ii)=>{
+    h+=`<tr><td class="tnm" draggable="true"
+      ondragstart="dragStart(event,'safItem',${ii})"
+      ondragover="dragOver(event,'safItem',${ii})"
+      ondragleave="dragLeave(event)"
+      ondrop="dragDrop(event,'safItem',${ii},S.safety.items,renderSafety)"
+      ondragend="dragEnd(event)">
+      <div class="hdrow lf">
+        <span>${esc(it.name)}</span>
+        <button class="dotbtn" onclick="openSafItemMenu(event,${ii})" title="選項">⋮</button>
+      </div></td>`;
+    floors.forEach(fl=>{
+      const k=`${fl}_${it.id}`;
+      const on=!!cells[k];
+      h+=`<td class="saf-cell">
+        <button class="saf-btn ${on?'on':'off'}" onclick="togSafCell('${esc(fl)}','${esc(it.id)}')" title="${on?'點擊改為未設置':'點擊改為已設置'}">${on?'✓':'✗'}</button>
+      </td>`;
+    });
+    h+=`<td style="background:var(--bg);border:1px solid var(--bg3);"></td></tr>`;
+  });
+
+  h+=`<tr>
+    <td style="background:var(--bg);border:1px solid var(--bg3);padding:6px;">
+      <button class="btn bp bsm" onclick="openAddSafItem()">＋ 管制項目</button></td>
+    ${floors.map(()=>`<td style="background:var(--bg);border:1px solid var(--bg3);"></td>`).join('')}
+    <td style="background:var(--bg);border:1px solid var(--bg3);"></td>
+  </tr></tbody>`;
+  document.getElementById('safTb').innerHTML=h;
+}
+
+function togSafCell(fl,iid){
+  const k=`${fl}_${iid}`;
+  S.safety.cells[k]=!S.safety.cells[k];
+  if(!S.safety.cells[k])delete S.safety.cells[k]; // keep object lean
+  save();renderSafety();
+}
+
+// ── Add/edit/delete floors and items ──
+function openAddSafFl(){
+  openModal('新增樓層',`<div class="f fc g3">
+    <label class="lbl">樓層名稱 <input id="safFlN" class="inp" placeholder="例：6F"></label>
+    <div style="font-size:11px;color:var(--dim);">💡 可一次新增多個，用逗號分隔，例如：<code style="color:#2563eb;">6F, 7F, 8F</code></div>
+    <button class="btn bp" style="padding:10px;" onclick="doAddSafFl()">新增</button>
+  </div>`);
+}
+function doAddSafFl(){
+  const inp=document.getElementById('safFlN').value;
+  const names=inp.split(/[,，、\n]/).map(s=>s.trim()).filter(Boolean);
+  if(!names.length){alert('請輸入樓層名稱');return;}
+  const dupes=[],added=[];
+  names.forEach(n=>{
+    if(S.safety.floors.includes(n))dupes.push(n);
+    else{S.safety.floors.push(n);added.push(n);}
+  });
+  if(!added.length){alert('全部都已存在：'+dupes.join('、'));return;}
+  save();fclose();renderSafety();
+}
+
+function openAddSafItem(){
+  openModal('新增管制項目',`<div class="f fc g3">
+    <label class="lbl">項目名稱 <input id="safItN" class="inp" placeholder="例：洗手台"></label>
+    <div style="font-size:11px;color:var(--dim);">💡 可一次新增多個，用逗號分隔</div>
+    <button class="btn bp" style="padding:10px;" onclick="doAddSafItem()">新增</button>
+  </div>`);
+}
+function doAddSafItem(){
+  const inp=document.getElementById('safItN').value;
+  const names=inp.split(/[,，、\n]/).map(s=>s.trim()).filter(Boolean);
+  if(!names.length){alert('請輸入項目名稱');return;}
+  const exists=S.safety.items.map(i=>i.name);
+  const dupes=[],added=[];
+  names.forEach(n=>{
+    if(exists.includes(n))dupes.push(n);
+    else{S.safety.items.push({id:'sf_'+uid(),name:n});added.push(n);}
+  });
+  if(!added.length){alert('全部都已存在：'+dupes.join('、'));return;}
+  save();fclose();renderSafety();
+}
+
+function openSafFlMenu(e,i){
+  const fl=S.safety.floors[i];
+  openPop(e,{kind:'safFl',idx:i,axis:'h',arr:S.safety.floors,
+    onReorder:renderSafety,
+    onDelete:()=>delSafFl(fl),
+    extras:[
+      {label:'✏️ 重新命名', fn:()=>openRenameSafFl(fl)},
+    ]});
+}
+function openRenameSafFl(fl){
+  openModal(`重新命名樓層「${esc(fl)}」`,`<div class="f fc g3">
+    <label class="lbl">新名稱 <input id="rsfn" class="inp" value="${esc(fl)}"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doRenameSafFl('${esc(fl)}')">儲存</button>
+  </div>`);
+}
+function doRenameSafFl(oldFl){
+  const newName=document.getElementById('rsfn').value.trim();
+  if(!newName||newName===oldFl){fclose();return;}
+  if(S.safety.floors.includes(newName)){alert('名稱重複');return;}
+  const i=S.safety.floors.indexOf(oldFl);
+  if(i<0)return;
+  S.safety.floors[i]=newName;
+  // Migrate cell keys
+  const newCells={};
+  Object.keys(S.safety.cells).forEach(k=>{
+    if(k.startsWith(oldFl+'_'))newCells[newName+k.slice(oldFl.length)]=S.safety.cells[k];
+    else newCells[k]=S.safety.cells[k];
+  });
+  S.safety.cells=newCells;
+  save();fclose();renderSafety();
+}
+function delSafFl(fl){
+  if(!confirm(`確定刪除「${fl}」這個樓層及其所有資料？`))return;
+  S.safety.floors=S.safety.floors.filter(x=>x!==fl);
+  Object.keys(S.safety.cells).forEach(k=>{
+    if(k.startsWith(fl+'_'))delete S.safety.cells[k];
+  });
+  save();renderSafety();
+}
+
+function openSafItemMenu(e,i){
+  const it=S.safety.items[i];
+  openPop(e,{kind:'safItem',idx:i,axis:'v',arr:S.safety.items,
+    onReorder:renderSafety,
+    onDelete:()=>delSafItem(it.id),
+    extras:[
+      {label:'✏️ 重新命名', fn:()=>openRenameSafItem(it.id)},
+    ]});
+}
+function openRenameSafItem(iid){
+  const it=S.safety.items.find(x=>x.id===iid);if(!it)return;
+  openModal(`重新命名「${esc(it.name)}」`,`<div class="f fc g3">
+    <label class="lbl">新名稱 <input id="rsin" class="inp" value="${esc(it.name)}"></label>
+    <button class="btn bp" style="padding:10px;" onclick="doRenameSafItem('${esc(iid)}')">儲存</button>
+  </div>`);
+}
+function doRenameSafItem(iid){
+  const it=S.safety.items.find(x=>x.id===iid);if(!it)return;
+  const newName=document.getElementById('rsin').value.trim();
+  if(!newName||newName===it.name){fclose();return;}
+  if(S.safety.items.some(x=>x.name===newName&&x.id!==iid)){alert('名稱重複');return;}
+  it.name=newName;
+  save();fclose();renderSafety();
+}
+function delSafItem(iid){
+  const it=S.safety.items.find(x=>x.id===iid);if(!it)return;
+  if(!confirm(`確定刪除管制項目「${it.name}」及其所有資料？`))return;
+  S.safety.items=S.safety.items.filter(x=>x.id!==iid);
+  Object.keys(S.safety.cells).forEach(k=>{
+    if(k.endsWith('_'+iid))delete S.safety.cells[k];
+  });
+  save();renderSafety();
+}
+
+function printSafety(){
+  if(!S.safety.items.length||!S.safety.floors.length){alert('請先設定管制項目與樓層');return;}
+  document.body.classList.add('print-saf');
+  setTimeout(()=>{window.print();},80);
+}
+
 
 // ══════════ PRINT / PDF EXPORT ══════════
 function printRenov(){
@@ -3194,7 +3463,7 @@ function printCell(){
   setTimeout(()=>{window.print();},60);
 }
 window.addEventListener('afterprint',()=>{
-  document.body.classList.remove('print-renov','print-cell','print-sched');
+  document.body.classList.remove('print-renov','print-cell','print-sched','print-saf');
   // Clean up filter classes
   document.querySelectorAll('.hide-print').forEach(el=>el.classList.remove('hide-print'));
 });
