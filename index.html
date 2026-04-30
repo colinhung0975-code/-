@@ -333,6 +333,52 @@ body{background:var(--bg);color:var(--txt);
 .saf-btn.off{background:#fee2e2;color:#dc2626;}
 #page-safety.active{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
 
+/* ─────── Bigger Scrollbar (desktop) ─────── */
+/* Webkit-based browsers: Chrome, Edge, Safari */
+@media (min-width: 768px) {
+  .rbdy::-webkit-scrollbar,
+  .sbdy::-webkit-scrollbar,
+  .sched-wrap::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+  }
+  .rbdy::-webkit-scrollbar-track,
+  .sbdy::-webkit-scrollbar-track,
+  .sched-wrap::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .rbdy::-webkit-scrollbar-thumb,
+  .sbdy::-webkit-scrollbar-thumb,
+  .sched-wrap::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+    transition: background .15s;
+  }
+  .rbdy::-webkit-scrollbar-thumb:hover,
+  .sbdy::-webkit-scrollbar-thumb:hover,
+  .sched-wrap::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+  }
+  .rbdy::-webkit-scrollbar-thumb:active,
+  .sbdy::-webkit-scrollbar-thumb:active,
+  .sched-wrap::-webkit-scrollbar-thumb:active {
+    background: #1e293b;
+  }
+  .rbdy::-webkit-scrollbar-corner,
+  .sbdy::-webkit-scrollbar-corner,
+  .sched-wrap::-webkit-scrollbar-corner {
+    background: #f1f5f9;
+  }
+  /* Firefox */
+  .rbdy, .sbdy, .sched-wrap {
+    scrollbar-width: auto;
+    scrollbar-color: #94a3b8 #f1f5f9;
+  }
+}
+
 
 /* Print: photos */
 @media print{
