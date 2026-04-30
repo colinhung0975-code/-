@@ -406,38 +406,41 @@ body{background:var(--bg);color:var(--txt);
     position:absolute;top:6px;right:6px;
   }
 
-  /* Row 2: date | delay | assignee — equal columns with dividers */
+  /* Row 2: date | delay | assignee — same line with inline-block */
   #ovdTb td:nth-child(3),
   #ovdTb td:nth-child(4),
   #ovdTb td:nth-child(5){
-    display:inline-flex !important;
-    align-items:center;
+    display:inline-block !important;
     font-size:11px;
     color:#475569;
     margin-bottom:0 !important;
-    padding:6px 8px 0 !important;
-    vertical-align:top;
+    padding:4px 0 0 !important;
+    vertical-align:middle;
+    white-space:nowrap;
   }
-  #ovdTb td:nth-child(3){width:auto !important;padding-left:0 !important;}
-  #ovdTb td:nth-child(3)::before{content:'📅';margin-right:4px;}
+  #ovdTb td:nth-child(3){
+    width:auto !important;
+  }
+  #ovdTb td:nth-child(3)::before{content:'📅 ';}
   #ovdTb td:nth-child(3) input[type="date"]{
     width:auto !important;font-size:11px !important;color:#0f172a !important;
     border:1px solid transparent !important;background:transparent !important;
-    padding:1px 3px !important;
+    padding:1px 2px !important;max-width:110px;vertical-align:middle;
   }
   #ovdTb td:nth-child(4){
     color:#dc2626 !important;font-weight:700 !important;
-    margin-left:8px !important;
+    margin-left:10px !important;
   }
-  #ovdTb td:nth-child(4)::before{content:'⏰ 延期';margin-right:4px;color:#7f1d1d;font-weight:600;}
+  #ovdTb td:nth-child(4)::before{content:'⏰ ';color:#7f1d1d;}
   #ovdTb td:nth-child(5){
-    margin-left:auto !important;float:right;
+    float:right;
   }
   #ovdTb td:nth-child(5)::before{content:'@';color:#6d28d9;font-weight:700;margin-right:2px;font-size:13px;}
   #ovdTb td:nth-child(5) input{
     font-size:11px !important;color:#6d28d9 !important;font-weight:600 !important;
-    width:auto !important;max-width:80px !important;text-align:left !important;
+    width:60px !important;max-width:60px !important;text-align:left !important;
     border:1px solid transparent !important;background:transparent !important;padding:1px 3px !important;
+    vertical-align:middle;
   }
 
   /* Other Tasks: same card layout as overdue */
