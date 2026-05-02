@@ -506,6 +506,37 @@ body{background:var(--bg);color:var(--txt);
     padding:0 8px;}
 }
 
+/* ─────── Today Changes (hierarchical) ─────── */
+.tc-fl,.tc-tr,.tc-sub{display:block;margin-bottom:6px;}
+.tc-fl>summary,.tc-tr>summary,.tc-sub>summary{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  cursor:pointer;list-style:none;user-select:none;
+  border-radius:6px;transition:background .12s;
+}
+.tc-fl>summary::-webkit-details-marker,
+.tc-tr>summary::-webkit-details-marker,
+.tc-sub>summary::-webkit-details-marker{display:none;}
+.tc-fl>summary{background:#dbeafe;color:#0f172a;font-weight:700;font-size:14px;}
+.tc-fl>summary:hover{background:#bfdbfe;}
+.tc-tr>summary{background:#fef3c7;color:#0f172a;font-weight:600;font-size:13px;}
+.tc-tr>summary:hover{background:#fde68a;}
+.tc-sub>summary{background:#f1f5f9;color:#0f172a;font-weight:500;font-size:12px;}
+.tc-sub>summary:hover{background:#e2e8f0;}
+.tc-arrow{font-size:11px;transition:transform .15s;flex-shrink:0;}
+details[open]>summary>.tc-arrow{transform:rotate(90deg);}
+.tc-fl-name{flex-shrink:0;color:#1e40af;}
+.tc-tr-name{flex-shrink:0;color:#92400e;}
+.tc-sub-name{flex-shrink:0;color:#15803d;font-weight:600;}
+.tc-meta{font-size:11px;color:#64748b;font-weight:500;}
+.tc-badge{margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;flex-shrink:0;}
+.tc-fl-body{padding:6px 6px 6px 22px;}
+.tc-tr-body{padding:4px 4px 4px 16px;}
+.tc-sub-body{padding:4px 4px 4px 16px;}
+.tc-unit{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:6px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:5px;margin-bottom:3px;font-size:12px;}
+.tc-unit-name{font-weight:700;color:#1e40af;flex-shrink:0;}
+.tc-unit-data{display:flex;align-items:center;font-size:12px;}
+
 /* ─────── Bigger Scrollbar (desktop) ─────── */
 /* Webkit-based browsers: Chrome, Edge, Safari */
 @media (min-width: 768px) {
@@ -1246,6 +1277,7 @@ async function addPhotoMenu(e,handle,useCamera){
   if(!h){alert('Handle 失效');return;}
   pickPhoto(useCamera,async files=>{
     if(!files||!files.length)return;
+    let cnt=0;
     for(const f of files){
       try{
         const photo=await uploadPhoto(f);
@@ -1253,6 +1285,7 @@ async function addPhotoMenu(e,handle,useCamera){
         if(!owner){alert('資料失效');return;}
         if(!owner.photos)owner.photos=[];
         owner.photos.push(photo);
+        cnt++;
         save();
         h.onChange();
       }catch(err){
@@ -1260,6 +1293,7 @@ async function addPhotoMenu(e,handle,useCamera){
         console.error(err);
       }
     }
+    if(cnt>0)logAuto(`新增 ${cnt} 張照片於 ${handleToLocation(handle)}`);
   });
 }
 
@@ -1271,10 +1305,34 @@ async function delPhoto(handle,photoId){
   if(i<0)return;
   const photo=owner.photos[i];
   owner.photos.splice(i,1);
+  logAuto(`刪除照片於 ${handleToLocation(handle)}`);
   save();
   h.onChange();
   // Async cleanup
   deletePhotoStorage(photo);
+}
+
+// Convert photo handle to human-readable location string
+function handleToLocation(handle){
+  if(!handle)return '未知位置';
+  if(handle.startsWith('todo_'))return '待辦事項';
+  if(handle.startsWith('ovdtodo_'))return '逾期事項';
+  if(handle.startsWith('other_'))return '其他交辦事項';
+  if(handle.startsWith('note_'))return '備註';
+  if(handle.startsWith('cellph_')){
+    // Format: cellph_FL_TID_UNIT_SUB
+    const parts=handle.slice(7).split('_');
+    if(parts.length>=4){
+      const fl=parts[0],tid=parts[1],unit=parts[2],sub=parts.slice(3).join('_');
+      // Find trade name
+      const inT=S.renov_indoor.trades.find(t=>t.id===tid);
+      const outT=S.renov_outdoor.trades.find(t=>t.id===tid);
+      const tr=inT||outT;
+      const where=inT?'室內':outT?'室外':'';
+      return `${where} ${fl} - ${tr?tr.name:'?'} - ${unit} - ${sub}`;
+    }
+  }
+  return handle;
 }
 
 // Lightbox
@@ -1840,6 +1898,7 @@ function addOther(){
   if(!tx)return;
   if(!Array.isArray(S.others))S.others=[];
   S.others.push({id:uid(),text:tx,assignee:asg,done:false,photos:[],createdAt:new Date().toISOString()});
+  logAuto(`新增交辦事項：「${tx}」${asg?`（${asg}）`:''}`);
   save();
   document.getElementById('othTx').value='';
   document.getElementById('othAsg').value='';
@@ -1847,7 +1906,9 @@ function addOther(){
 }
 function togOther(id){
   const o=S.others.find(x=>x.id===id);if(!o)return;
-  o.done=!o.done;save();renderOthers();
+  o.done=!o.done;
+  if(o.done)logAuto(`完成交辦事項：「${o.text}」`);
+  save();renderOthers();
 }
 function updOther(id,field,val){
   const o=S.others.find(x=>x.id===id);if(!o)return;
@@ -1858,6 +1919,7 @@ function updOther(id,field,val){
 async function delOther(id){
   if(!confirm('確定刪除此交辦事項？'))return;
   const o=S.others.find(x=>x.id===id);
+  if(o)logAuto(`刪除交辦事項：「${o.text}」`);
   S.others=S.others.filter(x=>x.id!==id);save();renderOthers();
   if(o&&o.photos)o.photos.forEach(p=>deletePhotoStorage(p));
 }
@@ -1939,6 +2001,7 @@ function addTodo(){
   const asg=document.getElementById('tasg').value.trim();
   if(!txt)return;
   S.todos.push({id:uid(),text:txt,done:false,date:dt,originalDate:dt,assignee:asg,photos:[]});
+  logAuto(`新增待辦事項：「${txt}」（${dt}${asg?'，'+asg:''}）`);
   save();
   document.getElementById('ttx').value='';
   document.getElementById('tasg').value='';
@@ -1953,6 +2016,7 @@ function togTodo(id){
   if(t.done){
     t.completedAt=today();
     t.wasOverdue=wasOverdueBefore;
+    logAuto(`完成待辦事項：「${t.text}」`);
   }else{
     delete t.completedAt;
     delete t.wasOverdue;
@@ -1977,6 +2041,7 @@ function cleanupCompletedTodos(){
 async function delTodo(id){
   if(!confirm('確定刪除此待辦事項及所有照片？'))return;
   const t=S.todos.find(x=>x.id===id);
+  if(t)logAuto(`刪除待辦事項：「${t.text}」`);
   S.todos=S.todos.filter(x=>x.id!==id);save();renderTodos();
   if(t&&t.photos)t.photos.forEach(p=>deletePhotoStorage(p));
 }
@@ -3069,6 +3134,8 @@ function addNote(){
   cell.notes[_unit][_sub].push({
     id:uid(),author:au||'匿名',text:tx,createdAt:new Date().toISOString(),photos:[]
   });
+  const tr=R().trades.find(t=>t.id===_tid);
+  logAuto(`新增備註於 ${_renovKey==='indoor'?'室內':'室外'} ${_fl} - ${tr?tr.name:'?'} - ${_unit} - ${_sub}：「${tx.length>30?tx.slice(0,30)+'...':tx}」`);
   save();renderNotesView();
 }
 async function delNote(nid){
@@ -3078,6 +3145,8 @@ async function delNote(nid){
   const i=arr.findIndex(n=>n.id===nid);
   if(i>=0){
     const note=arr[i];
+    const tr=R().trades.find(t=>t.id===_tid);
+    logAuto(`刪除備註於 ${_renovKey==='indoor'?'室內':'室外'} ${_fl} - ${tr?tr.name:'?'} - ${_unit} - ${_sub}`);
     arr.splice(i,1);save();renderNotesView();
     // Cleanup photos
     if(note.photos)note.photos.forEach(p=>deletePhotoStorage(p));
@@ -3531,8 +3600,12 @@ function renderSafety(){
 
 function togSafCell(fl,iid){
   const k=`${fl}_${iid}`;
+  const wasOn=!!S.safety.cells[k];
   S.safety.cells[k]=!S.safety.cells[k];
   if(!S.safety.cells[k])delete S.safety.cells[k]; // keep object lean
+  const it=S.safety.items.find(i=>i.id===iid);
+  const itName=it?it.name:'?';
+  logAuto(`勞安管制 ${fl} - ${itName}：${wasOn?'已設置 → 未設置':'未設置 → 已設置'}`);
   save();renderSafety();
 }
 
@@ -3554,6 +3627,7 @@ function doAddSafFl(){
     else{S.safety.floors.push(n);added.push(n);}
   });
   if(!added.length){alert('全部都已存在：'+dupes.join('、'));return;}
+  logAuto(`勞安管制新增樓層：${added.join('、')}`);
   save();fclose();renderSafety();
 }
 
@@ -3575,6 +3649,7 @@ function doAddSafItem(){
     else{S.safety.items.push({id:'sf_'+uid(),name:n});added.push(n);}
   });
   if(!added.length){alert('全部都已存在：'+dupes.join('、'));return;}
+  logAuto(`勞安管制新增項目：${added.join('、')}`);
   save();fclose();renderSafety();
 }
 
@@ -3615,6 +3690,7 @@ function delSafFl(fl){
   Object.keys(S.safety.cells).forEach(k=>{
     if(k.startsWith(fl+'_'))delete S.safety.cells[k];
   });
+  logAuto(`勞安管制刪除樓層：${fl}`);
   save();renderSafety();
 }
 
@@ -3649,6 +3725,7 @@ function delSafItem(iid){
   Object.keys(S.safety.cells).forEach(k=>{
     if(k.endsWith('_'+iid))delete S.safety.cells[k];
   });
+  logAuto(`勞安管制刪除項目：${it.name}`);
   save();renderSafety();
 }
 
@@ -3751,76 +3828,147 @@ function delChangeLog(id){
   openChangelog();
 }
 
-// ══════════ TODAY'S PROGRESS CHANGES ══════════
+// ══════════ TODAY'S PROGRESS CHANGES (hierarchical) ══════════
 function openTodayChanges(){
   ensureToday();
-  // Filter to current renovKey only
   const all=(S.dailyChanges.changes||[]).filter(c=>c.type==='renov'&&c.renovKey===_renovKey);
   const title=_renovKey==='indoor'?'室內裝修':'室外裝修';
 
-  // Aggregate by floor + trade + sub + unit (keep first 'from' and last 'to')
+  // Aggregate per (fl, tradeName, sub, unit) — keep first 'from' and last 'to'
   const map=new Map();
   all.forEach(c=>{
     const k=`${c.fl}::${c.tradeName}::${c.sub}::${c.unit}`;
     if(!map.has(k))map.set(k,{...c});
     else{
       const e=map.get(k);
-      e.to=c.to;
-      e.ts=c.ts;
-      e.who=c.who;
+      e.to=c.to;e.ts=c.ts;e.who=c.who;
     }
   });
-  // Filter where from === to (no net change)
   const items=Array.from(map.values()).filter(c=>c.from!==c.to);
+
+  // Group by floor → trade → unit
+  const byFloor={};
+  items.forEach(it=>{
+    if(!byFloor[it.fl])byFloor[it.fl]={items:[],byTrade:{}};
+    byFloor[it.fl].items.push(it);
+    const tn=it.tradeName;
+    if(!byFloor[it.fl].byTrade[tn])byFloor[it.fl].byTrade[tn]={items:[],bySub:{}};
+    byFloor[it.fl].byTrade[tn].items.push(it);
+    const sn=it.sub;
+    if(!byFloor[it.fl].byTrade[tn].bySub[sn])byFloor[it.fl].byTrade[tn].bySub[sn]={items:[],byUnit:{}};
+    byFloor[it.fl].byTrade[tn].bySub[sn].items.push(it);
+    if(!byFloor[it.fl].byTrade[tn].bySub[sn].byUnit[it.unit])
+      byFloor[it.fl].byTrade[tn].bySub[sn].byUnit[it.unit]=[];
+    byFloor[it.fl].byTrade[tn].bySub[sn].byUnit[it.unit].push(it);
+  });
+
+  // Use natural floor order from data
+  const flOrder=R().floors.filter(f=>byFloor[f]);
 
   let h=`<div class="f fc g3">
     <div style="font-size:12px;color:var(--mut);padding:10px 12px;background:#fffbeb;border-radius:6px;border-left:3px solid #f59e0b;line-height:1.7;">
       📊 <b style="color:#b45309;">${esc(title)} 今日變化摘要</b><br>
-      日期：<b>${fmtL(today())}</b>　|　共 <b style="color:#b45309;">${items.length}</b> 筆變化<br>
-      <span style="font-size:11px;color:var(--dim);">⏰ 此摘要每日 00:00 自動重置（保留當日資料）</span>
+      日期：<b>${fmtL(today())}</b>　|　共 <b style="color:#b45309;">${items.length}</b> 筆變化於 <b>${flOrder.length}</b> 個樓層<br>
+      <span style="font-size:11px;color:var(--dim);">⏰ 此摘要每日 00:00 自動重置　|　💡 點擊樓層展開明細</span>
     </div>`;
 
   if(items.length===0){
     h+=`<div style="text-align:center;color:var(--dim);padding:30px 10px;background:#f8fafc;border-radius:6px;">
       今日尚無進度變化紀錄 ✨
-    </div>`;
+    </div></div>`;
   }else{
-    // Group by trade
-    const byTrade={};
-    items.forEach(it=>{
-      if(!byTrade[it.tradeName])byTrade[it.tradeName]=[];
-      byTrade[it.tradeName].push(it);
-    });
-    h+=`<div style="max-height:60vh;overflow-y:auto;">`;
-    Object.keys(byTrade).forEach(trName=>{
-      const list=byTrade[trName];
-      h+=`<div style="margin-bottom:14px;">
-        <div style="font-size:13px;font-weight:700;color:#1e40af;background:#dbeafe;padding:6px 10px;border-radius:5px;margin-bottom:6px;">
-          🔨 ${esc(trName)} <span style="font-size:11px;color:#475569;font-weight:500;">（${list.length} 筆）</span>
-        </div>`;
-      list.forEach(it=>{
-        const inc=it.to>it.from;
-        const arrowColor=inc?'#16a34a':'#dc2626';
-        const arrow=inc?'▲':'▼';
-        const diff=Math.abs(it.to-it.from);
-        h+=`<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#fff;border:1px solid #e2e8f0;border-radius:5px;margin-bottom:4px;font-size:12px;">
-          <span style="color:#b45309;font-weight:700;flex-shrink:0;min-width:40px;">${esc(it.fl)}</span>
-          <span style="color:#15803d;font-weight:600;flex-shrink:0;min-width:60px;">${esc(it.sub)}</span>
-          <span style="color:#1e40af;font-weight:600;flex-shrink:0;min-width:40px;">${esc(it.unit)}</span>
-          <span style="margin-left:auto;display:flex;align-items:center;gap:5px;">
-            <span style="color:#94a3b8;">${it.from}%</span>
-            <span style="color:${arrowColor};font-weight:700;">${arrow} ${diff}%</span>
-            <span style="color:${arrowColor};font-weight:700;font-size:13px;">${it.to}%</span>
-          </span>
-        </div>`;
+    h+=`<div style="max-height:65vh;overflow-y:auto;">`;
+    flOrder.forEach(fl=>{
+      const flData=byFloor[fl];
+      // Floor average change
+      const flChange=avgChange(flData.items);
+      const flBadge=flBadgeHtml(flChange);
+      const cnt=flData.items.length;
+      const trCnt=Object.keys(flData.byTrade).length;
+      h+=`<details class="tc-fl">
+        <summary>
+          <span class="tc-arrow">▶</span>
+          <span class="tc-fl-name">${esc(fl)}</span>
+          <span class="tc-meta">${trCnt} 個工種 · ${cnt} 筆變化</span>
+          ${flBadge}
+        </summary>
+        <div class="tc-fl-body">`;
+      Object.keys(flData.byTrade).forEach(trName=>{
+        const trData=flData.byTrade[trName];
+        const trChange=avgChange(trData.items);
+        const trBadge=flBadgeHtml(trChange);
+        const subCnt=Object.keys(trData.bySub).length;
+        h+=`<details class="tc-tr">
+          <summary>
+            <span class="tc-arrow">▶</span>
+            <span class="tc-tr-name">🔨 ${esc(trName)}</span>
+            <span class="tc-meta">${subCnt} 個細項</span>
+            ${trBadge}
+          </summary>
+          <div class="tc-tr-body">`;
+        Object.keys(trData.bySub).forEach(subName=>{
+          const subData=trData.bySub[subName];
+          const subChange=avgChange(subData.items);
+          const subBadge=flBadgeHtml(subChange);
+          const units=Object.keys(subData.byUnit);
+          h+=`<details class="tc-sub">
+            <summary>
+              <span class="tc-arrow">▶</span>
+              <span class="tc-sub-name">└ ${esc(subName)}</span>
+              <span class="tc-meta">${units.length} 戶</span>
+              ${subBadge}
+            </summary>
+            <div class="tc-sub-body">`;
+          units.forEach(u=>{
+            const list=subData.byUnit[u];
+            const last=list[list.length-1];
+            const first=list[0];
+            const inc=last.to>first.from;
+            const arrow=inc?'▲':'▼';
+            const acolor=inc?'#16a34a':'#dc2626';
+            const diff=Math.abs(last.to-first.from);
+            h+=`<div class="tc-unit">
+              <span class="tc-unit-name">${esc(u)}</span>
+              <span class="tc-unit-data">
+                <span style="color:#94a3b8;">${first.from}%</span>
+                <span style="color:${acolor};font-weight:700;margin:0 6px;">${arrow} ${diff}%</span>
+                <span style="color:${acolor};font-weight:700;font-size:13px;">${last.to}%</span>
+              </span>
+            </div>`;
+          });
+          h+=`</div></details>`;
+        });
+        h+=`</div></details>`;
       });
-      h+=`</div>`;
+      h+=`</div></details>`;
     });
-    h+=`</div>`;
+    h+=`</div></div>`;
   }
-  h+=`</div>`;
 
   openModal(`📊 ${title} - 今日變化摘要`,h,true);
+}
+
+// Average change of a list of items (sum of (to-from)) / count
+function avgChange(items){
+  if(!items.length)return 0;
+  // Aggregate per cell: each cell's net change = last to - first from
+  const cellMap=new Map();
+  items.forEach(c=>{
+    const k=`${c.fl}::${c.tradeName}::${c.sub}::${c.unit}`;
+    if(!cellMap.has(k))cellMap.set(k,{from:c.from,to:c.to});
+    else cellMap.get(k).to=c.to;
+  });
+  let sum=0,cnt=0;
+  cellMap.forEach(v=>{sum+=(v.to-v.from);cnt++;});
+  return cnt?Math.round(sum/cnt*10)/10:0;
+}
+
+function flBadgeHtml(change){
+  const inc=change>=0;
+  const sign=inc?'+':'';
+  const color=change===0?'#64748b':inc?'#16a34a':'#dc2626';
+  const bg=change===0?'#f1f5f9':inc?'#dcfce7':'#fee2e2';
+  return `<span class="tc-badge" style="color:${color};background:${bg};">平均 ${sign}${change}%</span>`;
 }
 
 // ══════════ PRINT / PDF EXPORT ══════════
