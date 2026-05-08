@@ -1907,7 +1907,12 @@ function addOther(){
 function togOther(id){
   const o=S.others.find(x=>x.id===id);if(!o)return;
   o.done=!o.done;
-  if(o.done)logAuto(`完成交辦事項：「${o.text}」`);
+  if(o.done){
+    o.completedAt=today();
+    logAuto(`完成交辦事項：「${o.text}」`);
+  }else{
+    delete o.completedAt;
+  }
   save();renderOthers();
 }
 function updOther(id,field,val){
@@ -2024,19 +2029,36 @@ function togTodo(id){
   save();renderTodos();
 }
 
-// Cleanup completed todos from yesterday or earlier (called at startup and periodically)
+// Cleanup completed todos & others from yesterday or earlier (called at startup and periodically)
 function cleanupCompletedTodos(){
   const td=today();
-  const before=S.todos.length;
+  let changed=false;
+
+  // Todos
+  const beforeTodos=S.todos.length;
   S.todos=S.todos.filter(t=>{
     if(t.done&&t.completedAt&&t.completedAt<td){
-      // Cleanup photos from this todo
       if(t.photos)t.photos.forEach(p=>deletePhotoStorage(p));
       return false;
     }
     return true;
   });
-  if(S.todos.length!==before){save();}
+  if(S.todos.length!==beforeTodos)changed=true;
+
+  // Others
+  if(Array.isArray(S.others)){
+    const beforeOthers=S.others.length;
+    S.others=S.others.filter(o=>{
+      if(o.done&&o.completedAt&&o.completedAt<td){
+        if(o.photos)o.photos.forEach(p=>deletePhotoStorage(p));
+        return false;
+      }
+      return true;
+    });
+    if(S.others.length!==beforeOthers)changed=true;
+  }
+
+  if(changed)save();
 }
 async function delTodo(id){
   if(!confirm('確定刪除此待辦事項及所有照片？'))return;
