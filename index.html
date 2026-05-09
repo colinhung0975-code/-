@@ -1800,7 +1800,13 @@ function renderHome(){
   document.getElementById('tdt').value=td;
   renderTodos();
 }
-const getEff=t=>(!t.done&&t.date<today())?today():t.date;
+// Effective display date:
+//   - if not done: max(originalDate, today) for overdue → keep showing today
+//   - if done: completedAt (so it stays in TODAY's column until midnight cleanup)
+const getEff=t=>{
+  if(t.done)return t.completedAt||t.date;
+  return t.date<today()?today():t.date;
+};
 const getDly=t=>{if(t.done)return 0;return Math.max(0,diffD(t.originalDate,getEff(t)));};
 // Item is overdue if not done AND delay >= 2 days,
 // OR if it WAS overdue but completed today (kept visible until midnight cleanup)
@@ -1869,11 +1875,12 @@ function renderOthers(){
           style="accent-color:#3b82f6;cursor:pointer;width:14px;height:14px;">
       </span>
       <div class="oth-main">
-        <input type="text" value="${esc(o.text)}" onblur="updOther('${o.id}','text',this.value)"
+        <textarea rows="1" onblur="updOther('${o.id}','text',this.value)"
           class="oth-tx"
-          style="color:${cl};text-decoration:${dk};font-family:inherit;font-size:13px;font-weight:500;width:100%;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;outline:none;"
+          oninput="autoGrowTA(this)"
+          style="color:${cl};text-decoration:${dk};font-family:inherit;font-size:13px;font-weight:500;width:100%;border:1px solid transparent;background:transparent;padding:3px 5px;border-radius:4px;outline:none;resize:none;overflow:hidden;line-height:1.5;word-break:break-word;white-space:pre-wrap;"
           onfocus="this.style.borderColor='#2563eb';this.style.background='#eff6ff';this.style.textDecoration='none';this.style.color='#0f172a';"
-          onblur="this.style.borderColor='transparent';this.style.background='transparent';this.style.textDecoration='${dk}';this.style.color='${cl}';updOther('${o.id}','text',this.value);">
+          onblur="this.style.borderColor='transparent';this.style.background='transparent';this.style.textDecoration='${dk}';this.style.color='${cl}';updOther('${o.id}','text',this.value);">${esc(o.text)}</textarea>
         ${np?`<div class="oth-photos">${o.photos.map(p=>`<div class="ph" style="width:42px;height:42px;" onclick="openLightbox('${esc(p.url)}','${esc(p.uploadedBy||'匿名')} · ${esc(fmtDT(p.uploadedAt))}')"><img src="${esc(p.thumbUrl||p.url)}" loading="lazy"><button class="pdel" onclick="event.stopPropagation();delPhoto('${handle}','${p.id}')">×</button></div>`).join('')}</div>`:''}
       </div>
       <span class="oth-asg-wrap">
@@ -1890,6 +1897,15 @@ function renderOthers(){
       </span>
     </div>`;
   }).join('');
+
+  // Auto-size all textareas to fit content
+  wrap.querySelectorAll('textarea.oth-tx').forEach(autoGrowTA);
+}
+
+// Auto-grow textarea to fit its content
+function autoGrowTA(ta){
+  ta.style.height='auto';
+  ta.style.height=ta.scrollHeight+'px';
 }
 
 function addOther(){
@@ -4139,6 +4155,22 @@ renderHome();
 setTimeout(()=>{initFirebase();setPhotoStatus();},200);
 // Periodic check: every 30 min, clean up old completed todos (in case user keeps tab open across midnight)
 setInterval(()=>{cleanupCompletedTodos();renderTodos();},30*60*1000);
+
+// Reliable cleanup: trigger when tab becomes visible (handles mobile sleep, returning from background)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    cleanupCompletedTodos();
+    // Refresh display if home page is active
+    const active=document.querySelector('.page.active');
+    if(active&&active.id==='page-home')renderTodos();
+  }
+});
+// Also on window focus (covers cases visibilitychange doesn't fire)
+window.addEventListener('focus',()=>{
+  cleanupCompletedTodos();
+  const active=document.querySelector('.page.active');
+  if(active&&active.id==='page-home')renderTodos();
+});
 </script>
 </body>
 </html>
